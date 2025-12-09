@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Værdata Siljan</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 { text-align: center; margin-bottom: 10px; font-size: 1.5rem; }
+    .updated { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #252542;
+      border-radius: 10px;
+      padding: 15px;
+    }
+    .card h2 {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+    .value { font-size: 2rem; font-weight: bold; }
+    .unit { font-size: 0.9rem; color: #888; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .stat { text-align: center; }
+    .stat-label { font-size: 0.7rem; color: #666; }
+    .stat-value { font-size: 1rem; font-weight: bold; }
+    .stat-detail { font-size: 0.65rem; color: #555; }
+    .trend-up { color: #4ade80; }
+    .trend-down { color: #f87171; }
+    .sun { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <h1>🌤️ Værdata Siljan</h1>
+  <div class="updated">Sist oppdatert: <span id="lastUpdate">--</span></div>
+  
+  <div class="grid">
+    <!-- Temperatur -->
+    <div class="card">
+      <h2>🌡️ Temperatur</h2>
+      <span class="value" id="temp">--</span><span class="unit">°C</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">24t min/max</div>
+          <div class="stat-value"><span id="temp24min">--</span> / <span id="temp24max">--</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">7d min/max</div>
+          <div class="stat-value"><span id="temp7min">--</span> / <span id="temp7max">--</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">30d min/max</div>
+          <div class="stat-value"><span id="temp30min">--</span> / <span id="temp30max">--</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Irradiance -->
+    <div class="card">
+      <h2>☀️ Solinnstråling</h2>
+      <span class="value" id="irr">--</span><span class="unit">W/m²</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks i dag</div>
+          <div class="stat-value" id="irrMax">--</div>
+          <div class="stat-detail" id="irrMaxTime">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Solskinn 24t</div>
+          <div class="stat-value sun" id="sun24">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Solskinn 7d</div>
+          <div class="stat-value sun" id="sun7">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nedbør -->
+    <div class="card">
+      <h2>🌧️ Nedbør</h2>
+      <span class="value" id="rainToday">--</span><span class="unit">mm i dag</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Siste 24t</div>
+          <div class="stat-value" id="rain24">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Siste 7d</div>
+          <div class="stat-value" id="rain7">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Siste 30d</div>
+          <div class="stat-value" id="rain30">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fuktighet & Dugpunkt -->
+    <div class="card">
+      <h2>💧 Fuktighet</h2>
+      <span class="value" id="hum">--</span><span class="unit">%</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Dugpunkt</div>
+          <div class="stat-value" id="dew">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">24t min/max</div>
+          <div class="stat-value"><span id="hum24min">--</span>/<span id="hum24max">--</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt 7d</div>
+          <div class="stat-value" id="hum7avg">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trykk -->
+    <div class="card">
+      <h2>🌀 Lufttrykk</h2>
+      <span class="value" id="press">--</span><span class="unit">hPa</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Trend 3t</div>
+          <div class="stat-value" id="pressTrend">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">24t min/max</div>
+          <div class="stat-value"><span id="press24min">--</span>/<span id="press24max">--</span></div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt 7d</div>
+          <div class="stat-value" id="press7avg">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase config v1.0
+    const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
+
+    async function query(sql) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(sql)
+      });
+      return res.json();
+    }
+
+    async function fetchData(table, select = '*', filter = '', order = '', limit = '') {
+      let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
+      if (filter) url += `&${filter}`;
+      if (order) url += `&order=${order}`;
+      if (limit) url += `&limit=${limit}`;
+      
+      const res = await fetch(url, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      return res.json();
+    }
+
+    function fmt(val, decimals = 1) {
+      if (val === null || val === undefined) return '--';
+      return Number(val).toFixed(decimals);
+    }
+
+    function fmtTime(isoString) {
+      if (!isoString) return '--';
+      const d = new Date(isoString);
+      return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function fmtDateTime(isoString) {
+      if (!isoString) return '--';
+      const d = new Date(isoString);
+      return d.toLocaleString('no-NO', { 
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+      });
+    }
+
+    function hoursAgo(h) {
+      return new Date(Date.now() - h * 60 * 60 * 1000).toISOString();
+    }
+
+    function daysAgo(d) {
+      return new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    async function updateDashboard() {
+      try {
+        // Siste måling
+        const latest = await fetchData('weather_data', '*', '', 'recorded_at.desc', '1');
+        if (latest.length > 0) {
+          const d = latest[0];
+          document.getElementById('temp').textContent = fmt(d.temperature);
+          document.getElementById('irr').textContent = fmt(d.irradiance, 0);
+          document.getElementById('rainToday').textContent = fmt(d.rain_today);
+          document.getElementById('hum').textContent = fmt(d.humidity, 0);
+          document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
+          document.getElementById('press').textContent = fmt(d.pressure, 0);
+          document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at);
+        }
+
+        // 24t data
+        const data24h = await fetchData('weather_data', '*', `recorded_at=gte.${hoursAgo(24)}`);
+        if (data24h.length > 0) {
+          const temps = data24h.map(d => d.temperature).filter(t => t !== null);
+          const hums = data24h.map(d => d.humidity).filter(h => h !== null);
+          const irrs = data24h.map(d => ({ val: d.irradiance, time: d.recorded_at })).filter(i => i.val !== null);
+          const presses = data24h.map(d => d.pressure).filter(p => p !== null);
+          
+          document.getElementById('temp24min').textContent = fmt(Math.min(...temps));
+          document.getElementById('temp24max').textContent = fmt(Math.max(...temps));
+          document.getElementById('hum24min').textContent = fmt(Math.min(...hums), 0);
+          document.getElementById('hum24max').textContent = fmt(Math.max(...hums), 0);
+          document.getElementById('press24min').textContent = fmt(Math.min(...presses), 0);
+          document.getElementById('press24max').textContent = fmt(Math.max(...presses), 0);
+
+          // Maks irradiance i dag
+          const maxIrr = irrs.reduce((max, i) => i.val > max.val ? i : max, { val: 0, time: null });
+          document.getElementById('irrMax').textContent = fmt(maxIrr.val, 0) + ' W/m²';
+          document.getElementById('irrMaxTime').textContent = fmtTime(maxIrr.time);
+
+          // Solskinnstimer (irradiance > 120)
+          const sunMinutes24 = data24h.filter(d => d.irradiance > 120).length;
+          document.getElementById('sun24').textContent = fmt(sunMinutes24 / 60) + 't';
+
+          // Nedbør 24t
+          const rain24 = data24h.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
+          document.getElementById('rain24').textContent = fmt(rain24) + ' mm';
+        }
+
+        // 3t trykk-trend
+        const data3h = await fetchData('weather_data', 'pressure,recorded_at', `recorded_at=gte.${hoursAgo(3)}`, 'recorded_at.asc');
+        if (data3h.length > 1) {
+          const first = data3h[0].pressure;
+          const last = data3h[data3h.length - 1].pressure;
+          const diff = last - first;
+          const trendEl = document.getElementById('pressTrend');
+          if (diff > 1) {
+            trendEl.innerHTML = `<span class="trend-up">↑ +${fmt(diff, 1)}</span>`;
+          } else if (diff < -1) {
+            trendEl.innerHTML = `<span class="trend-down">↓ ${fmt(diff, 1)}</span>`;
+          } else {
+            trendEl.textContent = `→ ${fmt(diff, 1)}`;
+          }
+        }
+
+        // 7d data
+        const data7d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(7)}`);
+        if (data7d.length > 0) {
+          const temps = data7d.map(d => d.temperature).filter(t => t !== null);
+          const hums = data7d.map(d => d.humidity).filter(h => h !== null);
+          const presses = data7d.map(d => d.pressure).filter(p => p !== null);
+          
+          document.getElementById('temp7min').textContent = fmt(Math.min(...temps));
+          document.getElementById('temp7max').textContent = fmt(Math.max(...temps));
+          document.getElementById('hum7avg').textContent = fmt(hums.reduce((a, b) => a + b, 0) / hums.length, 0) + '%';
+          document.getElementById('press7avg').textContent = fmt(presses.reduce((a, b) => a + b, 0) / presses.length, 0);
+
+          const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
+          document.getElementById('sun7').textContent = fmt(sunMinutes7 / 60) + 't';
+
+          const rain7 = data7d.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
+          document.getElementById('rain7').textContent = fmt(rain7) + ' mm';
+        }
+
+        // 30d data
+        const data30d = await fetchData('weather_data', 'temperature,rain_5min', `recorded_at=gte.${daysAgo(30)}`);
+        if (data30d.length > 0) {
+          const temps = data30d.map(d => d.temperature).filter(t => t !== null);
+          document.getElementById('temp30min').textContent = fmt(Math.min(...temps));
+          document.getElementById('temp30max').textContent = fmt(Math.max(...temps));
+
+          const rain30 = data30d.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
+          document.getElementById('rain30').textContent = fmt(rain30) + ' mm';
+        }
+
+      } catch (err) {
+        console.error('Feil ved henting av data:', err);
+      }
+    }
+
+    // Oppdater ved lasting og hvert minutt
+    updateDashboard();
+    setInterval(updateDashboard, 60000);
+  </script>
+</body>
+</html>
