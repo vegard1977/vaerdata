@@ -40,7 +40,7 @@
     .stat { text-align: center; }
     .stat-label { font-size: 0.7rem; color: #666; }
     .stat-value { font-size: 1rem; font-weight: bold; }
-    .stat-detail { font-size: 0.65rem; color: #555; }
+    .stat-detail { font-size: 0.65rem; color: #888; }
     .trend-up { color: #4ade80; }
     .trend-down { color: #f87171; }
     .sun { color: #fbbf24; }
@@ -59,14 +59,17 @@
         <div class="stat">
           <div class="stat-label">24t min/max</div>
           <div class="stat-value"><span id="temp24min">--</span> / <span id="temp24max">--</span></div>
+          <div class="stat-detail" id="temp24times">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">7d min/max</div>
           <div class="stat-value"><span id="temp7min">--</span> / <span id="temp7max">--</span></div>
+          <div class="stat-detail" id="temp7times">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">30d min/max</div>
           <div class="stat-value"><span id="temp30min">--</span> / <span id="temp30max">--</span></div>
+          <div class="stat-detail" id="temp30times">--</div>
         </div>
       </div>
     </div>
@@ -124,6 +127,7 @@
         <div class="stat">
           <div class="stat-label">24t min/max</div>
           <div class="stat-value"><span id="hum24min">--</span>/<span id="hum24max">--</span></div>
+          <div class="stat-detail" id="hum24times">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Snitt 7d</div>
@@ -144,6 +148,7 @@
         <div class="stat">
           <div class="stat-label">24t min/max</div>
           <div class="stat-value"><span id="press24min">--</span>/<span id="press24max">--</span></div>
+          <div class="stat-detail" id="press24times">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Snitt 7d</div>
@@ -154,22 +159,12 @@
   </div>
 
   <script>
-    // Supabase config v1.0
+    // Supabase config v1.1
+    // Changelog:
+    //   v1.0 - Initial version
+    //   v1.1 - Added timestamps for min/max values
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
-
-    async function query(sql) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(sql)
-      });
-      return res.json();
-    }
 
     async function fetchData(table, select = '*', filter = '', order = '', limit = '') {
       let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
@@ -205,12 +200,30 @@
       });
     }
 
+    function fmtShortDate(isoString) {
+      if (!isoString) return '--';
+      const d = new Date(isoString);
+      return d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric' });
+    }
+
     function hoursAgo(h) {
       return new Date(Date.now() - h * 60 * 60 * 1000).toISOString();
     }
 
     function daysAgo(d) {
       return new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    function findMinMax(data, field) {
+      let min = { val: Infinity, time: null };
+      let max = { val: -Infinity, time: null };
+      for (const d of data) {
+        if (d[field] !== null && d[field] !== undefined) {
+          if (d[field] < min.val) { min.val = d[field]; min.time = d.recorded_at; }
+          if (d[field] > max.val) { max.val = d[field]; max.time = d.recorded_at; }
+        }
+      }
+      return { min, max };
     }
 
     async function updateDashboard() {
@@ -231,22 +244,28 @@
         // 24t data
         const data24h = await fetchData('weather_data', '*', `recorded_at=gte.${hoursAgo(24)}`);
         if (data24h.length > 0) {
-          const temps = data24h.map(d => d.temperature).filter(t => t !== null);
-          const hums = data24h.map(d => d.humidity).filter(h => h !== null);
-          const irrs = data24h.map(d => ({ val: d.irradiance, time: d.recorded_at })).filter(i => i.val !== null);
-          const presses = data24h.map(d => d.pressure).filter(p => p !== null);
-          
-          document.getElementById('temp24min').textContent = fmt(Math.min(...temps));
-          document.getElementById('temp24max').textContent = fmt(Math.max(...temps));
-          document.getElementById('hum24min').textContent = fmt(Math.min(...hums), 0);
-          document.getElementById('hum24max').textContent = fmt(Math.max(...hums), 0);
-          document.getElementById('press24min').textContent = fmt(Math.min(...presses), 0);
-          document.getElementById('press24max').textContent = fmt(Math.max(...presses), 0);
+          // Temperatur
+          const temp24 = findMinMax(data24h, 'temperature');
+          document.getElementById('temp24min').textContent = fmt(temp24.min.val);
+          document.getElementById('temp24max').textContent = fmt(temp24.max.val);
+          document.getElementById('temp24times').textContent = `(${fmtTime(temp24.min.time)} / ${fmtTime(temp24.max.time)})`;
+
+          // Fuktighet
+          const hum24 = findMinMax(data24h, 'humidity');
+          document.getElementById('hum24min').textContent = fmt(hum24.min.val, 0);
+          document.getElementById('hum24max').textContent = fmt(hum24.max.val, 0);
+          document.getElementById('hum24times').textContent = `(${fmtTime(hum24.min.time)} / ${fmtTime(hum24.max.time)})`;
+
+          // Trykk
+          const press24 = findMinMax(data24h, 'pressure');
+          document.getElementById('press24min').textContent = fmt(press24.min.val, 0);
+          document.getElementById('press24max').textContent = fmt(press24.max.val, 0);
+          document.getElementById('press24times').textContent = `(${fmtTime(press24.min.time)} / ${fmtTime(press24.max.time)})`;
 
           // Maks irradiance i dag
-          const maxIrr = irrs.reduce((max, i) => i.val > max.val ? i : max, { val: 0, time: null });
-          document.getElementById('irrMax').textContent = fmt(maxIrr.val, 0) + ' W/m²';
-          document.getElementById('irrMaxTime').textContent = fmtTime(maxIrr.time);
+          const irr24 = findMinMax(data24h, 'irradiance');
+          document.getElementById('irrMax').textContent = fmt(irr24.max.val, 0) + ' W/m²';
+          document.getElementById('irrMaxTime').textContent = fmtTime(irr24.max.time);
 
           // Solskinnstimer (irradiance > 120)
           const sunMinutes24 = data24h.filter(d => d.irradiance > 120).length;
@@ -276,29 +295,39 @@
         // 7d data
         const data7d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(7)}`);
         if (data7d.length > 0) {
-          const temps = data7d.map(d => d.temperature).filter(t => t !== null);
+          // Temperatur
+          const temp7 = findMinMax(data7d, 'temperature');
+          document.getElementById('temp7min').textContent = fmt(temp7.min.val);
+          document.getElementById('temp7max').textContent = fmt(temp7.max.val);
+          document.getElementById('temp7times').textContent = `(${fmtShortDate(temp7.min.time)} / ${fmtShortDate(temp7.max.time)})`;
+
+          // Fuktighet snitt
           const hums = data7d.map(d => d.humidity).filter(h => h !== null);
-          const presses = data7d.map(d => d.pressure).filter(p => p !== null);
-          
-          document.getElementById('temp7min').textContent = fmt(Math.min(...temps));
-          document.getElementById('temp7max').textContent = fmt(Math.max(...temps));
           document.getElementById('hum7avg').textContent = fmt(hums.reduce((a, b) => a + b, 0) / hums.length, 0) + '%';
+
+          // Trykk snitt
+          const presses = data7d.map(d => d.pressure).filter(p => p !== null);
           document.getElementById('press7avg').textContent = fmt(presses.reduce((a, b) => a + b, 0) / presses.length, 0);
 
+          // Solskinn 7d
           const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
           document.getElementById('sun7').textContent = fmt(sunMinutes7 / 60) + 't';
 
+          // Nedbør 7d
           const rain7 = data7d.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
           document.getElementById('rain7').textContent = fmt(rain7) + ' mm';
         }
 
         // 30d data
-        const data30d = await fetchData('weather_data', 'temperature,rain_5min', `recorded_at=gte.${daysAgo(30)}`);
+        const data30d = await fetchData('weather_data', 'temperature,rain_5min,recorded_at', `recorded_at=gte.${daysAgo(30)}`);
         if (data30d.length > 0) {
-          const temps = data30d.map(d => d.temperature).filter(t => t !== null);
-          document.getElementById('temp30min').textContent = fmt(Math.min(...temps));
-          document.getElementById('temp30max').textContent = fmt(Math.max(...temps));
+          // Temperatur
+          const temp30 = findMinMax(data30d, 'temperature');
+          document.getElementById('temp30min').textContent = fmt(temp30.min.val);
+          document.getElementById('temp30max').textContent = fmt(temp30.max.val);
+          document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
 
+          // Nedbør 30d
           const rain30 = data30d.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
           document.getElementById('rain30').textContent = fmt(rain30) + ' mm';
         }
