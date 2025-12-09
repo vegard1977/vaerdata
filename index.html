@@ -36,6 +36,7 @@
     }
     .value { font-size: 2rem; font-weight: bold; }
     .unit { font-size: 0.9rem; color: #888; }
+    .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
     .stats-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
     .stat { text-align: center; }
@@ -45,6 +46,9 @@
     .trend-up { color: #4ade80; }
     .trend-down { color: #f87171; }
     .sun { color: #fbbf24; }
+    .wind-calm { color: #4ade80; }
+    .wind-moderate { color: #fbbf24; }
+    .wind-strong { color: #f87171; }
   </style>
 </head>
 <body>
@@ -92,6 +96,30 @@
         <div class="stat">
           <div class="stat-label">Solskinn 7d</div>
           <div class="stat-value sun" id="sun7">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vind -->
+    <div class="card">
+      <h2>💨 Vind</h2>
+      <span class="value" id="wind">--</span><span class="unit">km/h</span>
+      <div class="beaufort" id="beaufort">--</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks 24t</div>
+          <div class="stat-value" id="wind24max">--</div>
+          <div class="stat-detail" id="wind24time">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 7d</div>
+          <div class="stat-value" id="wind7max">--</div>
+          <div class="stat-detail" id="wind7time">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 30d</div>
+          <div class="stat-value" id="wind30max">--</div>
+          <div class="stat-detail" id="wind30time">--</div>
         </div>
       </div>
     </div>
@@ -194,11 +222,12 @@
   </div>
 
   <script>
-    // Supabase config v1.2
+    // Supabase config v1.3
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
-    //   v1.2 - Added rain statistics card with max day, rain days, dry streak, avg per rain day
+    //   v1.2 - Added rain statistics card
+    //   v1.3 - Added wind card with Beaufort scale
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
 
@@ -273,8 +302,23 @@
       return { min, max };
     }
 
+    function getBeaufort(kmh) {
+      if (kmh < 1) return { name: 'Stille', class: 'wind-calm' };
+      if (kmh < 6) return { name: 'Flau vind', class: 'wind-calm' };
+      if (kmh < 12) return { name: 'Svak vind', class: 'wind-calm' };
+      if (kmh < 20) return { name: 'Lett bris', class: 'wind-calm' };
+      if (kmh < 29) return { name: 'Laber bris', class: 'wind-moderate' };
+      if (kmh < 39) return { name: 'Frisk bris', class: 'wind-moderate' };
+      if (kmh < 50) return { name: 'Liten kuling', class: 'wind-moderate' };
+      if (kmh < 62) return { name: 'Stiv kuling', class: 'wind-strong' };
+      if (kmh < 75) return { name: 'Sterk kuling', class: 'wind-strong' };
+      if (kmh < 89) return { name: 'Liten storm', class: 'wind-strong' };
+      if (kmh < 103) return { name: 'Full storm', class: 'wind-strong' };
+      if (kmh < 118) return { name: 'Sterk storm', class: 'wind-strong' };
+      return { name: 'Orkan', class: 'wind-strong' };
+    }
+
     function calcDailyRain(data) {
-      // Grupper etter dato og finn maks rain_today per dag
       const dailyMax = {};
       for (const d of data) {
         if (d.rain_today === null || d.rain_today === undefined) continue;
@@ -292,7 +336,6 @@
       let maxDay = { val: 0, date: null };
       let totalRain = 0;
       
-      // Regndager og maks dag
       for (const day of days) {
         const rain = dailyMax[day].val;
         if (rain > threshold) {
@@ -304,7 +347,6 @@
         }
       }
 
-      // Lengste tørrperiode
       let maxDryStreak = 0;
       let currentDryStreak = 0;
       for (const day of days) {
@@ -316,7 +358,6 @@
         }
       }
 
-      // Snitt per regndag
       const avgPerRainDay = rainDays > 0 ? totalRain / rainDays : 0;
 
       return { rainDays, maxDay, maxDryStreak, avgPerRainDay };
@@ -335,6 +376,14 @@
           document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
           document.getElementById('press').textContent = fmt(d.pressure, 0);
           document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at);
+          
+          // Vind
+          const windSpeed = d.wind_speed || 0;
+          document.getElementById('wind').textContent = fmt(windSpeed, 0);
+          const beaufort = getBeaufort(windSpeed);
+          const beaufortEl = document.getElementById('beaufort');
+          beaufortEl.textContent = beaufort.name;
+          beaufortEl.className = 'beaufort ' + beaufort.class;
         }
 
         // 24t data
@@ -358,16 +407,21 @@
           document.getElementById('press24max').textContent = fmt(press24.max.val, 0);
           document.getElementById('press24times').textContent = `(${fmtTime(press24.min.time)} / ${fmtTime(press24.max.time)})`;
 
+          // Vind 24t
+          const wind24 = findMinMax(data24h, 'wind_speed');
+          document.getElementById('wind24max').textContent = fmt(wind24.max.val, 0) + ' km/h';
+          document.getElementById('wind24time').textContent = fmtTime(wind24.max.time);
+
           // Maks irradiance i dag
           const irr24 = findMinMax(data24h, 'irradiance');
           document.getElementById('irrMax').textContent = fmt(irr24.max.val, 0) + ' W/m²';
           document.getElementById('irrMaxTime').textContent = fmtTime(irr24.max.time);
 
-          // Solskinnstimer (irradiance > 120)
+          // Solskinnstimer
           const sunMinutes24 = data24h.filter(d => d.irradiance > 120).length;
           document.getElementById('sun24').textContent = fmt(sunMinutes24 / 60) + 't';
 
-          // Nedbør 24t (akkumulert)
+          // Nedbør 24t
           const daily24 = calcDailyRain(data24h);
           const rain24total = Object.values(daily24).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain24').textContent = fmt(rain24total) + ' mm';
@@ -406,11 +460,16 @@
           const presses = data7d.map(d => d.pressure).filter(p => p !== null);
           document.getElementById('press7avg').textContent = fmt(presses.reduce((a, b) => a + b, 0) / presses.length, 0);
 
+          // Vind 7d
+          const wind7 = findMinMax(data7d, 'wind_speed');
+          document.getElementById('wind7max').textContent = fmt(wind7.max.val, 0) + ' km/h';
+          document.getElementById('wind7time').textContent = fmtShortDate(wind7.max.time);
+
           // Solskinn 7d
           const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
           document.getElementById('sun7').textContent = fmt(sunMinutes7 / 60) + 't';
 
-          // Nedbør 7d (akkumulert)
+          // Nedbør 7d
           const daily7 = calcDailyRain(data7d);
           const rain7total = Object.values(daily7).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain7').textContent = fmt(rain7total) + ' mm';
@@ -423,7 +482,7 @@
         }
 
         // 30d data
-        const data30d = await fetchData('weather_data', 'temperature,rain_today,recorded_at', `recorded_at=gte.${daysAgo(30)}`);
+        const data30d = await fetchData('weather_data', 'temperature,rain_today,wind_speed,recorded_at', `recorded_at=gte.${daysAgo(30)}`);
         if (data30d.length > 0) {
           // Temperatur
           const temp30 = findMinMax(data30d, 'temperature');
@@ -431,7 +490,12 @@
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
           document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
 
-          // Nedbør 30d (akkumulert)
+          // Vind 30d
+          const wind30 = findMinMax(data30d, 'wind_speed');
+          document.getElementById('wind30max').textContent = fmt(wind30.max.val, 0) + ' km/h';
+          document.getElementById('wind30time').textContent = fmtShortDate(wind30.max.time);
+
+          // Nedbør 30d
           const daily30 = calcDailyRain(data30d);
           const rain30total = Object.values(daily30).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain30').textContent = fmt(rain30total) + ' mm';
@@ -450,7 +514,6 @@
       }
     }
 
-    // Oppdater ved lasting og hvert minutt
     updateDashboard();
     setInterval(updateDashboard, 60000);
   </script>
