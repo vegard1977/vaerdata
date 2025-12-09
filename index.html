@@ -37,6 +37,7 @@
     .value { font-size: 2rem; font-weight: bold; }
     .unit { font-size: 0.9rem; color: #888; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .stats-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
     .stat { text-align: center; }
     .stat-label { font-size: 0.7rem; color: #666; }
     .stat-value { font-size: 1rem; font-weight: bold; }
@@ -115,6 +116,40 @@
       </div>
     </div>
 
+    <!-- Nedbør statistikk -->
+    <div class="card">
+      <h2>📊 Nedbør statistikk</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks dag 7d</div>
+          <div class="stat-value" id="rainMax7">--</div>
+          <div class="stat-detail" id="rainMax7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks dag 30d</div>
+          <div class="stat-value" id="rainMax30">--</div>
+          <div class="stat-detail" id="rainMax30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Regndager</div>
+          <div class="stat-value"><span id="rainDays7">--</span> / <span id="rainDays30">--</span></div>
+          <div class="stat-detail">(7d / 30d)</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Lengste tørrperiode</div>
+          <div class="stat-value" id="dryStreak">--</div>
+          <div class="stat-detail">(siste 30d)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt per regndag</div>
+          <div class="stat-value" id="rainAvgPerDay">--</div>
+          <div class="stat-detail">(siste 30d)</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Fuktighet & Dugpunkt -->
     <div class="card">
       <h2>💧 Fuktighet</h2>
@@ -159,10 +194,11 @@
   </div>
 
   <script>
-    // Supabase config v1.1
+    // Supabase config v1.2
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
+    //   v1.2 - Added rain statistics card with max day, rain days, dry streak, avg per rain day
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
 
@@ -206,12 +242,23 @@
       return d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric' });
     }
 
+    function fmtDayMonth(isoString) {
+      if (!isoString) return '--';
+      const d = new Date(isoString);
+      return d.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' });
+    }
+
     function hoursAgo(h) {
       return new Date(Date.now() - h * 60 * 60 * 1000).toISOString();
     }
 
     function daysAgo(d) {
       return new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    function getDateKey(isoString) {
+      const d = new Date(isoString);
+      return d.toISOString().split('T')[0];
     }
 
     function findMinMax(data, field) {
@@ -224,6 +271,55 @@
         }
       }
       return { min, max };
+    }
+
+    function calcDailyRain(data) {
+      // Grupper etter dato og finn maks rain_today per dag
+      const dailyMax = {};
+      for (const d of data) {
+        if (d.rain_today === null || d.rain_today === undefined) continue;
+        const dateKey = getDateKey(d.recorded_at);
+        if (!dailyMax[dateKey] || d.rain_today > dailyMax[dateKey].val) {
+          dailyMax[dateKey] = { val: d.rain_today, time: d.recorded_at };
+        }
+      }
+      return dailyMax;
+    }
+
+    function calcRainStats(dailyMax, threshold = 0.2) {
+      const days = Object.keys(dailyMax).sort();
+      let rainDays = 0;
+      let maxDay = { val: 0, date: null };
+      let totalRain = 0;
+      
+      // Regndager og maks dag
+      for (const day of days) {
+        const rain = dailyMax[day].val;
+        if (rain > threshold) {
+          rainDays++;
+          totalRain += rain;
+        }
+        if (rain > maxDay.val) {
+          maxDay = { val: rain, date: dailyMax[day].time };
+        }
+      }
+
+      // Lengste tørrperiode
+      let maxDryStreak = 0;
+      let currentDryStreak = 0;
+      for (const day of days) {
+        if (dailyMax[day].val <= threshold) {
+          currentDryStreak++;
+          maxDryStreak = Math.max(maxDryStreak, currentDryStreak);
+        } else {
+          currentDryStreak = 0;
+        }
+      }
+
+      // Snitt per regndag
+      const avgPerRainDay = rainDays > 0 ? totalRain / rainDays : 0;
+
+      return { rainDays, maxDay, maxDryStreak, avgPerRainDay };
     }
 
     async function updateDashboard() {
@@ -271,9 +367,10 @@
           const sunMinutes24 = data24h.filter(d => d.irradiance > 120).length;
           document.getElementById('sun24').textContent = fmt(sunMinutes24 / 60) + 't';
 
-          // Nedbør 24t
-          const rain24 = data24h.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
-          document.getElementById('rain24').textContent = fmt(rain24) + ' mm';
+          // Nedbør 24t (akkumulert)
+          const daily24 = calcDailyRain(data24h);
+          const rain24total = Object.values(daily24).reduce((sum, d) => sum + d.val, 0);
+          document.getElementById('rain24').textContent = fmt(rain24total) + ' mm';
         }
 
         // 3t trykk-trend
@@ -313,13 +410,20 @@
           const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
           document.getElementById('sun7').textContent = fmt(sunMinutes7 / 60) + 't';
 
-          // Nedbør 7d
-          const rain7 = data7d.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
-          document.getElementById('rain7').textContent = fmt(rain7) + ' mm';
+          // Nedbør 7d (akkumulert)
+          const daily7 = calcDailyRain(data7d);
+          const rain7total = Object.values(daily7).reduce((sum, d) => sum + d.val, 0);
+          document.getElementById('rain7').textContent = fmt(rain7total) + ' mm';
+
+          // Nedbør statistikk 7d
+          const stats7 = calcRainStats(daily7);
+          document.getElementById('rainMax7').textContent = fmt(stats7.maxDay.val) + ' mm';
+          document.getElementById('rainMax7date').textContent = fmtDayMonth(stats7.maxDay.date);
+          document.getElementById('rainDays7').textContent = stats7.rainDays;
         }
 
         // 30d data
-        const data30d = await fetchData('weather_data', 'temperature,rain_5min,recorded_at', `recorded_at=gte.${daysAgo(30)}`);
+        const data30d = await fetchData('weather_data', 'temperature,rain_today,recorded_at', `recorded_at=gte.${daysAgo(30)}`);
         if (data30d.length > 0) {
           // Temperatur
           const temp30 = findMinMax(data30d, 'temperature');
@@ -327,9 +431,18 @@
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
           document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
 
-          // Nedbør 30d
-          const rain30 = data30d.reduce((sum, d) => sum + (d.rain_5min || 0), 0);
-          document.getElementById('rain30').textContent = fmt(rain30) + ' mm';
+          // Nedbør 30d (akkumulert)
+          const daily30 = calcDailyRain(data30d);
+          const rain30total = Object.values(daily30).reduce((sum, d) => sum + d.val, 0);
+          document.getElementById('rain30').textContent = fmt(rain30total) + ' mm';
+
+          // Nedbør statistikk 30d
+          const stats30 = calcRainStats(daily30);
+          document.getElementById('rainMax30').textContent = fmt(stats30.maxDay.val) + ' mm';
+          document.getElementById('rainMax30date').textContent = fmtDayMonth(stats30.maxDay.date);
+          document.getElementById('rainDays30').textContent = stats30.rainDays;
+          document.getElementById('dryStreak').textContent = stats30.maxDryStreak + ' dager';
+          document.getElementById('rainAvgPerDay').textContent = fmt(stats30.avgPerRainDay) + ' mm';
         }
 
       } catch (err) {
