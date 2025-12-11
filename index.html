@@ -15,6 +15,19 @@
     }
     h1 { text-align: center; margin-bottom: 10px; font-size: 1.5rem; }
     .updated { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+    .section-title {
+      font-size: 0.85rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 30px 0 15px 0;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #333;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .section-title:first-of-type { margin-top: 0; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -35,6 +48,7 @@
       padding-bottom: 5px;
     }
     .card.regional { border-left: 3px solid #8b5cf6; }
+    .card.metno { border-left: 3px solid #06b6d4; }
     .value { font-size: 2rem; font-weight: bold; }
     .unit { font-size: 0.9rem; color: #888; }
     .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
@@ -53,12 +67,19 @@
     .wind-strong { color: #f87171; }
     .temp-cold { color: #60a5fa; }
     .temp-warm { color: #f87171; }
+    .uv-low { color: #4ade80; }
+    .uv-moderate { color: #fbbf24; }
+    .uv-high { color: #f97316; }
+    .uv-very-high { color: #ef4444; }
+    .uv-extreme { color: #a855f7; }
+    .wind-dir { font-size: 1.5rem; }
   </style>
 </head>
 <body>
   <h1>🌤️ Værdata Siljan</h1>
   <div class="updated">Sist oppdatert: <span id="lastUpdate">--</span></div>
   
+  <div class="section-title">📍 Lokale målinger</div>
   <div class="grid">
     <!-- Temperatur -->
     <div class="card">
@@ -79,43 +100,6 @@
           <div class="stat-label">30d min/max</div>
           <div class="stat-value"><span id="temp30min">--</span> / <span id="temp30max">--</span></div>
           <div class="stat-detail" id="temp30times">--</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Siljan Temperatur Regional -->
-    <div class="card regional">
-      <h2>🌡️ Siljan Temperatur (regionalt)</h2>
-      <div class="stats-2">
-        <div class="stat">
-          <div class="stat-label">Min i dag</div>
-          <div class="stat-value temp-cold" id="siljanTempMin">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Max i dag</div>
-          <div class="stat-value temp-warm" id="siljanTempMax">--</div>
-        </div>
-      </div>
-      <div class="stats-4">
-        <div class="stat">
-          <div class="stat-label">Laveste 7d</div>
-          <div class="stat-value temp-cold" id="siljanTempMin7">--</div>
-          <div class="stat-detail" id="siljanTempMin7date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Høyeste 7d</div>
-          <div class="stat-value temp-warm" id="siljanTempMax7">--</div>
-          <div class="stat-detail" id="siljanTempMax7date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Laveste 30d</div>
-          <div class="stat-value temp-cold" id="siljanTempMin30">--</div>
-          <div class="stat-detail" id="siljanTempMin30date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Høyeste 30d</div>
-          <div class="stat-value temp-warm" id="siljanTempMax30">--</div>
-          <div class="stat-detail" id="siljanTempMax30date">--</div>
         </div>
       </div>
     </div>
@@ -141,6 +125,30 @@
       </div>
     </div>
 
+    <!-- UV-indeks -->
+    <div class="card">
+      <h2>☀️ UV-indeks</h2>
+      <span class="value" id="uv">--</span>
+      <div class="beaufort" id="uvLevel">--</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks 24t</div>
+          <div class="stat-value" id="uv24max">--</div>
+          <div class="stat-detail" id="uv24time">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 7d</div>
+          <div class="stat-value" id="uv7max">--</div>
+          <div class="stat-detail" id="uv7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 30d</div>
+          <div class="stat-value" id="uv30max">--</div>
+          <div class="stat-detail" id="uv30date">--</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Vind -->
     <div class="card">
       <h2>💨 Vind</h2>
@@ -161,30 +169,6 @@
           <div class="stat-label">Maks 30d</div>
           <div class="stat-value" id="wind30max">--</div>
           <div class="stat-detail" id="wind30time">--</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Siljan Vind Regional -->
-    <div class="card regional">
-      <h2>💨 Siljan Vind (regionalt maks)</h2>
-      <span class="value" id="siljanWindMax">--</span><span class="unit">km/h</span>
-      <div class="beaufort" id="siljanWindBeaufort">--</div>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Maks 7d</div>
-          <div class="stat-value" id="siljanWind7max">--</div>
-          <div class="stat-detail" id="siljanWind7date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Maks 30d</div>
-          <div class="stat-value" id="siljanWind30max">--</div>
-          <div class="stat-detail" id="siljanWind30date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Snitt maks/dag</div>
-          <div class="stat-value" id="siljanWindAvg">--</div>
-          <div class="stat-detail">(30d)</div>
         </div>
       </div>
     </div>
@@ -243,29 +227,6 @@
       </div>
     </div>
 
-    <!-- Siljan Nedbør Regional -->
-    <div class="card regional">
-      <h2>🌧️ Siljan Nedbør (regionalt maks)</h2>
-      <span class="value" id="siljanRainMax">--</span><span class="unit">mm i dag</span>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Maks dag 7d</div>
-          <div class="stat-value" id="siljanRain7max">--</div>
-          <div class="stat-detail" id="siljanRain7date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Maks dag 30d</div>
-          <div class="stat-value" id="siljanRain30max">--</div>
-          <div class="stat-detail" id="siljanRain30date">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Snitt maks/dag</div>
-          <div class="stat-value" id="siljanRainAvg">--</div>
-          <div class="stat-detail">(30d)</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Fuktighet & Dugpunkt -->
     <div class="card">
       <h2>💧 Fuktighet</h2>
@@ -309,14 +270,172 @@
     </div>
   </div>
 
+  <div class="section-title">🌐 Met.no Prognose</div>
+  <div class="grid">
+    <!-- Vindkast & Retning -->
+    <div class="card metno">
+      <h2>💨 Vindkast & Retning</h2>
+      <span class="value" id="windGust">--</span><span class="unit">km/h</span>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Retning</div>
+          <div class="stat-value"><span class="wind-dir" id="windDirArrow">--</span> <span id="windDirText">--</span></div>
+          <div class="stat-detail" id="windDirDeg">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks kast 24t</div>
+          <div class="stat-value" id="gust24max">--</div>
+          <div class="stat-detail" id="gust24time">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skydekke -->
+    <div class="card metno">
+      <h2>☁️ Skydekke</h2>
+      <span class="value" id="clouds">--</span><span class="unit">%</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Snitt 24t</div>
+          <div class="stat-value" id="clouds24avg">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Min 24t</div>
+          <div class="stat-value" id="clouds24min">--</div>
+          <div class="stat-detail" id="clouds24minTime">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 24t</div>
+          <div class="stat-value" id="clouds24max">--</div>
+          <div class="stat-detail" id="clouds24maxTime">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nedbør & Torden sannsynlighet -->
+    <div class="card metno">
+      <h2>🌧️ Sannsynlighet</h2>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Nedbør nå</div>
+          <div class="stat-value" id="precipProb">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Torden nå</div>
+          <div class="stat-value" id="thunderProb">--</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Maks nedbør 24t</div>
+          <div class="stat-value" id="precipProb24max">--</div>
+          <div class="stat-detail" id="precipProb24time">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks torden 24t</div>
+          <div class="stat-value" id="thunderProb24max">--</div>
+          <div class="stat-detail" id="thunderProb24time">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">📍 Siljan regionalt</div>
+  <div class="grid">
+    <!-- Siljan Temperatur Regional -->
+    <div class="card regional">
+      <h2>🌡️ Temperatur (regionalt)</h2>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Min i dag</div>
+          <div class="stat-value temp-cold" id="siljanTempMin">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Max i dag</div>
+          <div class="stat-value temp-warm" id="siljanTempMax">--</div>
+        </div>
+      </div>
+      <div class="stats-4">
+        <div class="stat">
+          <div class="stat-label">Laveste 7d</div>
+          <div class="stat-value temp-cold" id="siljanTempMin7">--</div>
+          <div class="stat-detail" id="siljanTempMin7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Høyeste 7d</div>
+          <div class="stat-value temp-warm" id="siljanTempMax7">--</div>
+          <div class="stat-detail" id="siljanTempMax7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Laveste 30d</div>
+          <div class="stat-value temp-cold" id="siljanTempMin30">--</div>
+          <div class="stat-detail" id="siljanTempMin30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Høyeste 30d</div>
+          <div class="stat-value temp-warm" id="siljanTempMax30">--</div>
+          <div class="stat-detail" id="siljanTempMax30date">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Siljan Vind Regional -->
+    <div class="card regional">
+      <h2>💨 Vind (regionalt maks)</h2>
+      <span class="value" id="siljanWindMax">--</span><span class="unit">km/h</span>
+      <div class="beaufort" id="siljanWindBeaufort">--</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks 7d</div>
+          <div class="stat-value" id="siljanWind7max">--</div>
+          <div class="stat-detail" id="siljanWind7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 30d</div>
+          <div class="stat-value" id="siljanWind30max">--</div>
+          <div class="stat-detail" id="siljanWind30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt maks/dag</div>
+          <div class="stat-value" id="siljanWindAvg">--</div>
+          <div class="stat-detail">(30d)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Siljan Nedbør Regional -->
+    <div class="card regional">
+      <h2>🌧️ Nedbør (regionalt maks)</h2>
+      <span class="value" id="siljanRainMax">--</span><span class="unit">mm i dag</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks dag 7d</div>
+          <div class="stat-value" id="siljanRain7max">--</div>
+          <div class="stat-detail" id="siljanRain7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks dag 30d</div>
+          <div class="stat-value" id="siljanRain30max">--</div>
+          <div class="stat-detail" id="siljanRain30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt maks/dag</div>
+          <div class="stat-value" id="siljanRainAvg">--</div>
+          <div class="stat-detail">(30d)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Supabase config v1.4
+    // Supabase config v1.5
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
     //   v1.2 - Added rain statistics card
     //   v1.3 - Added wind card with Beaufort scale
-    //   v1.4 - Added Siljan regional cards (temp, wind, rain), changed wind source to Snurrasen
+    //   v1.4 - Added Siljan regional cards, changed wind to Snurrasen
+    //   v1.5 - Added UV index, met.no data (wind gust, direction, clouds, probabilities), reorganized layout
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
 
@@ -408,6 +527,23 @@
       return { name: 'Orkan', class: 'wind-strong' };
     }
 
+    function getUvLevel(uv) {
+      if (uv === null || uv === undefined) return { name: '--', class: '' };
+      if (uv < 3) return { name: 'Lav', class: 'uv-low' };
+      if (uv < 6) return { name: 'Moderat', class: 'uv-moderate' };
+      if (uv < 8) return { name: 'Høy', class: 'uv-high' };
+      if (uv < 11) return { name: 'Veldig høy', class: 'uv-very-high' };
+      return { name: 'Ekstrem', class: 'uv-extreme' };
+    }
+
+    function getWindDirection(deg) {
+      if (deg === null || deg === undefined) return { arrow: '--', text: '--' };
+      const directions = ['N', 'NØ', 'Ø', 'SØ', 'S', 'SV', 'V', 'NV'];
+      const arrows = ['↓', '↙', '←', '↖', '↑', '↗', '→', '↘'];
+      const index = Math.round(deg / 45) % 8;
+      return { arrow: arrows[index], text: directions[index] };
+    }
+
     function calcDailyRain(data) {
       const dailyMax = {};
       for (const d of data) {
@@ -465,18 +601,6 @@
       return dailyMax;
     }
 
-    function calcDailyMin(data, field) {
-      const dailyMin = {};
-      for (const d of data) {
-        if (d[field] === null || d[field] === undefined) continue;
-        const dateKey = getDateKey(d.recorded_at);
-        if (!dailyMin[dateKey] || d[field] < dailyMin[dateKey].val) {
-          dailyMin[dateKey] = { val: d[field], time: d.recorded_at };
-        }
-      }
-      return dailyMin;
-    }
-
     async function updateDashboard() {
       try {
         // Siste måling
@@ -498,6 +622,24 @@
           const beaufortEl = document.getElementById('beaufort');
           beaufortEl.textContent = beaufort.name;
           beaufortEl.className = 'beaufort ' + beaufort.class;
+
+          // UV-indeks
+          const uvVal = d.uv_index || 0;
+          document.getElementById('uv').textContent = fmt(uvVal, 1);
+          const uvLevel = getUvLevel(uvVal);
+          const uvLevelEl = document.getElementById('uvLevel');
+          uvLevelEl.textContent = uvLevel.name;
+          uvLevelEl.className = 'beaufort ' + uvLevel.class;
+
+          // Met.no data
+          document.getElementById('windGust').textContent = fmt(d.wind_gust, 0);
+          const windDir = getWindDirection(d.wind_direction);
+          document.getElementById('windDirArrow').textContent = windDir.arrow;
+          document.getElementById('windDirText').textContent = windDir.text;
+          document.getElementById('windDirDeg').textContent = d.wind_direction ? d.wind_direction + '°' : '--';
+          document.getElementById('clouds').textContent = fmt(d.cloud_cover, 0);
+          document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '%';
+          document.getElementById('thunderProb').textContent = fmt(d.thunder_probability, 0) + '%';
 
           // Siljan regional data
           document.getElementById('siljanTempMin').textContent = fmt(d.temp_min_daily) + '°C';
@@ -538,6 +680,33 @@
           document.getElementById('wind24max').textContent = fmt(wind24.max.val, 0) + ' km/h';
           document.getElementById('wind24time').textContent = fmtTime(wind24.max.time);
 
+          // UV 24t
+          const uv24 = findMinMax(data24h, 'uv_index');
+          document.getElementById('uv24max').textContent = fmt(uv24.max.val, 1);
+          document.getElementById('uv24time').textContent = fmtTime(uv24.max.time);
+
+          // Vindkast 24t
+          const gust24 = findMinMax(data24h, 'wind_gust');
+          document.getElementById('gust24max').textContent = fmt(gust24.max.val, 0) + ' km/h';
+          document.getElementById('gust24time').textContent = fmtTime(gust24.max.time);
+
+          // Skydekke 24t
+          const clouds24 = findMinMax(data24h, 'cloud_cover');
+          const cloudsAvg = data24h.filter(d => d.cloud_cover !== null).reduce((sum, d) => sum + d.cloud_cover, 0) / data24h.filter(d => d.cloud_cover !== null).length;
+          document.getElementById('clouds24avg').textContent = fmt(cloudsAvg, 0) + '%';
+          document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '%';
+          document.getElementById('clouds24minTime').textContent = fmtTime(clouds24.min.time);
+          document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '%';
+          document.getElementById('clouds24maxTime').textContent = fmtTime(clouds24.max.time);
+
+          // Sannsynligheter 24t
+          const precip24 = findMinMax(data24h, 'precipitation_probability');
+          const thunder24 = findMinMax(data24h, 'thunder_probability');
+          document.getElementById('precipProb24max').textContent = fmt(precip24.max.val, 0) + '%';
+          document.getElementById('precipProb24time').textContent = fmtTime(precip24.max.time);
+          document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '%';
+          document.getElementById('thunderProb24time').textContent = fmtTime(thunder24.max.time);
+
           // Maks irradiance i dag
           const irr24 = findMinMax(data24h, 'irradiance');
           document.getElementById('irrMax').textContent = fmt(irr24.max.val, 0) + ' W/m²';
@@ -577,6 +746,11 @@
           document.getElementById('temp7min').textContent = fmt(temp7.min.val);
           document.getElementById('temp7max').textContent = fmt(temp7.max.val);
           document.getElementById('temp7times').textContent = `(${fmtShortDate(temp7.min.time)} / ${fmtShortDate(temp7.max.time)})`;
+
+          // UV 7d
+          const uv7 = findMinMax(data7d, 'uv_index');
+          document.getElementById('uv7max').textContent = fmt(uv7.max.val, 1);
+          document.getElementById('uv7date').textContent = fmtShortDate(uv7.max.time);
 
           // Siljan regional temp 7d
           const siljanTempMin7 = findMinMax(data7d, 'temp_min_daily');
@@ -638,6 +812,11 @@
           document.getElementById('temp30min').textContent = fmt(temp30.min.val);
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
           document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
+
+          // UV 30d
+          const uv30 = findMinMax(data30d, 'uv_index');
+          document.getElementById('uv30max').textContent = fmt(uv30.max.val, 1);
+          document.getElementById('uv30date').textContent = fmtShortDate(uv30.max.time);
 
           // Siljan regional temp 30d
           const siljanTempMin30 = findMinMax(data30d, 'temp_min_daily');
