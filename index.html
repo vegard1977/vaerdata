@@ -34,11 +34,13 @@
       border-bottom: 1px solid #333;
       padding-bottom: 5px;
     }
+    .card.regional { border-left: 3px solid #8b5cf6; }
     .value { font-size: 2rem; font-weight: bold; }
     .unit { font-size: 0.9rem; color: #888; }
     .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
     .stats-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+    .stats-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
     .stat { text-align: center; }
     .stat-label { font-size: 0.7rem; color: #666; }
     .stat-value { font-size: 1rem; font-weight: bold; }
@@ -49,6 +51,8 @@
     .wind-calm { color: #4ade80; }
     .wind-moderate { color: #fbbf24; }
     .wind-strong { color: #f87171; }
+    .temp-cold { color: #60a5fa; }
+    .temp-warm { color: #f87171; }
   </style>
 </head>
 <body>
@@ -75,6 +79,43 @@
           <div class="stat-label">30d min/max</div>
           <div class="stat-value"><span id="temp30min">--</span> / <span id="temp30max">--</span></div>
           <div class="stat-detail" id="temp30times">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Siljan Temperatur Regional -->
+    <div class="card regional">
+      <h2>🌡️ Siljan Temperatur (regionalt)</h2>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Min i dag</div>
+          <div class="stat-value temp-cold" id="siljanTempMin">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Max i dag</div>
+          <div class="stat-value temp-warm" id="siljanTempMax">--</div>
+        </div>
+      </div>
+      <div class="stats-4">
+        <div class="stat">
+          <div class="stat-label">Laveste 7d</div>
+          <div class="stat-value temp-cold" id="siljanTempMin7">--</div>
+          <div class="stat-detail" id="siljanTempMin7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Høyeste 7d</div>
+          <div class="stat-value temp-warm" id="siljanTempMax7">--</div>
+          <div class="stat-detail" id="siljanTempMax7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Laveste 30d</div>
+          <div class="stat-value temp-cold" id="siljanTempMin30">--</div>
+          <div class="stat-detail" id="siljanTempMin30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Høyeste 30d</div>
+          <div class="stat-value temp-warm" id="siljanTempMax30">--</div>
+          <div class="stat-detail" id="siljanTempMax30date">--</div>
         </div>
       </div>
     </div>
@@ -120,6 +161,30 @@
           <div class="stat-label">Maks 30d</div>
           <div class="stat-value" id="wind30max">--</div>
           <div class="stat-detail" id="wind30time">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Siljan Vind Regional -->
+    <div class="card regional">
+      <h2>💨 Siljan Vind (regionalt maks)</h2>
+      <span class="value" id="siljanWindMax">--</span><span class="unit">km/h</span>
+      <div class="beaufort" id="siljanWindBeaufort">--</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks 7d</div>
+          <div class="stat-value" id="siljanWind7max">--</div>
+          <div class="stat-detail" id="siljanWind7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 30d</div>
+          <div class="stat-value" id="siljanWind30max">--</div>
+          <div class="stat-detail" id="siljanWind30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt maks/dag</div>
+          <div class="stat-value" id="siljanWindAvg">--</div>
+          <div class="stat-detail">(30d)</div>
         </div>
       </div>
     </div>
@@ -178,6 +243,29 @@
       </div>
     </div>
 
+    <!-- Siljan Nedbør Regional -->
+    <div class="card regional">
+      <h2>🌧️ Siljan Nedbør (regionalt maks)</h2>
+      <span class="value" id="siljanRainMax">--</span><span class="unit">mm i dag</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks dag 7d</div>
+          <div class="stat-value" id="siljanRain7max">--</div>
+          <div class="stat-detail" id="siljanRain7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks dag 30d</div>
+          <div class="stat-value" id="siljanRain30max">--</div>
+          <div class="stat-detail" id="siljanRain30date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt maks/dag</div>
+          <div class="stat-value" id="siljanRainAvg">--</div>
+          <div class="stat-detail">(30d)</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Fuktighet & Dugpunkt -->
     <div class="card">
       <h2>💧 Fuktighet</h2>
@@ -222,12 +310,13 @@
   </div>
 
   <script>
-    // Supabase config v1.3
+    // Supabase config v1.4
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
     //   v1.2 - Added rain statistics card
     //   v1.3 - Added wind card with Beaufort scale
+    //   v1.4 - Added Siljan regional cards (temp, wind, rain), changed wind source to Snurrasen
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
 
@@ -247,7 +336,7 @@
     }
 
     function fmt(val, decimals = 1) {
-      if (val === null || val === undefined) return '--';
+      if (val === null || val === undefined || val === Infinity || val === -Infinity) return '--';
       return Number(val).toFixed(decimals);
     }
 
@@ -303,6 +392,7 @@
     }
 
     function getBeaufort(kmh) {
+      if (kmh === null || kmh === undefined) return { name: '--', class: '' };
       if (kmh < 1) return { name: 'Stille', class: 'wind-calm' };
       if (kmh < 6) return { name: 'Flau vind', class: 'wind-calm' };
       if (kmh < 12) return { name: 'Svak vind', class: 'wind-calm' };
@@ -363,6 +453,30 @@
       return { rainDays, maxDay, maxDryStreak, avgPerRainDay };
     }
 
+    function calcDailyMax(data, field) {
+      const dailyMax = {};
+      for (const d of data) {
+        if (d[field] === null || d[field] === undefined) continue;
+        const dateKey = getDateKey(d.recorded_at);
+        if (!dailyMax[dateKey] || d[field] > dailyMax[dateKey].val) {
+          dailyMax[dateKey] = { val: d[field], time: d.recorded_at };
+        }
+      }
+      return dailyMax;
+    }
+
+    function calcDailyMin(data, field) {
+      const dailyMin = {};
+      for (const d of data) {
+        if (d[field] === null || d[field] === undefined) continue;
+        const dateKey = getDateKey(d.recorded_at);
+        if (!dailyMin[dateKey] || d[field] < dailyMin[dateKey].val) {
+          dailyMin[dateKey] = { val: d[field], time: d.recorded_at };
+        }
+      }
+      return dailyMin;
+    }
+
     async function updateDashboard() {
       try {
         // Siste måling
@@ -384,6 +498,18 @@
           const beaufortEl = document.getElementById('beaufort');
           beaufortEl.textContent = beaufort.name;
           beaufortEl.className = 'beaufort ' + beaufort.class;
+
+          // Siljan regional data
+          document.getElementById('siljanTempMin').textContent = fmt(d.temp_min_daily) + '°C';
+          document.getElementById('siljanTempMax').textContent = fmt(d.temp_max_daily) + '°C';
+          document.getElementById('siljanRainMax').textContent = fmt(d.rain_max_daily);
+          
+          const siljanWind = d.wind_max_daily || 0;
+          document.getElementById('siljanWindMax').textContent = fmt(siljanWind, 0);
+          const siljanBeaufort = getBeaufort(siljanWind);
+          const siljanBeaufortEl = document.getElementById('siljanWindBeaufort');
+          siljanBeaufortEl.textContent = siljanBeaufort.name;
+          siljanBeaufortEl.className = 'beaufort ' + siljanBeaufort.class;
         }
 
         // 24t data
@@ -452,6 +578,29 @@
           document.getElementById('temp7max').textContent = fmt(temp7.max.val);
           document.getElementById('temp7times').textContent = `(${fmtShortDate(temp7.min.time)} / ${fmtShortDate(temp7.max.time)})`;
 
+          // Siljan regional temp 7d
+          const siljanTempMin7 = findMinMax(data7d, 'temp_min_daily');
+          const siljanTempMax7 = findMinMax(data7d, 'temp_max_daily');
+          document.getElementById('siljanTempMin7').textContent = fmt(siljanTempMin7.min.val) + '°C';
+          document.getElementById('siljanTempMin7date').textContent = fmtShortDate(siljanTempMin7.min.time);
+          document.getElementById('siljanTempMax7').textContent = fmt(siljanTempMax7.max.val) + '°C';
+          document.getElementById('siljanTempMax7date').textContent = fmtShortDate(siljanTempMax7.max.time);
+
+          // Siljan regional vind 7d
+          const siljanWind7 = findMinMax(data7d, 'wind_max_daily');
+          document.getElementById('siljanWind7max').textContent = fmt(siljanWind7.max.val, 0) + ' km/h';
+          document.getElementById('siljanWind7date').textContent = fmtShortDate(siljanWind7.max.time);
+
+          // Siljan regional nedbør 7d
+          const siljanRain7daily = calcDailyMax(data7d, 'rain_max_daily');
+          const siljanRain7vals = Object.values(siljanRain7daily);
+          let siljanRain7max = { val: 0, time: null };
+          for (const v of siljanRain7vals) {
+            if (v.val > siljanRain7max.val) siljanRain7max = v;
+          }
+          document.getElementById('siljanRain7max').textContent = fmt(siljanRain7max.val) + ' mm';
+          document.getElementById('siljanRain7date').textContent = fmtDayMonth(siljanRain7max.time);
+
           // Fuktighet snitt
           const hums = data7d.map(d => d.humidity).filter(h => h !== null);
           document.getElementById('hum7avg').textContent = fmt(hums.reduce((a, b) => a + b, 0) / hums.length, 0) + '%';
@@ -482,13 +631,44 @@
         }
 
         // 30d data
-        const data30d = await fetchData('weather_data', 'temperature,rain_today,wind_speed,recorded_at', `recorded_at=gte.${daysAgo(30)}`);
+        const data30d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(30)}`);
         if (data30d.length > 0) {
           // Temperatur
           const temp30 = findMinMax(data30d, 'temperature');
           document.getElementById('temp30min').textContent = fmt(temp30.min.val);
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
           document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
+
+          // Siljan regional temp 30d
+          const siljanTempMin30 = findMinMax(data30d, 'temp_min_daily');
+          const siljanTempMax30 = findMinMax(data30d, 'temp_max_daily');
+          document.getElementById('siljanTempMin30').textContent = fmt(siljanTempMin30.min.val) + '°C';
+          document.getElementById('siljanTempMin30date').textContent = fmtShortDate(siljanTempMin30.min.time);
+          document.getElementById('siljanTempMax30').textContent = fmt(siljanTempMax30.max.val) + '°C';
+          document.getElementById('siljanTempMax30date').textContent = fmtShortDate(siljanTempMax30.max.time);
+
+          // Siljan regional vind 30d
+          const siljanWind30 = findMinMax(data30d, 'wind_max_daily');
+          document.getElementById('siljanWind30max').textContent = fmt(siljanWind30.max.val, 0) + ' km/h';
+          document.getElementById('siljanWind30date').textContent = fmtShortDate(siljanWind30.max.time);
+          
+          // Siljan vind snitt
+          const siljanWindVals = data30d.map(d => d.wind_max_daily).filter(w => w !== null);
+          const siljanWindAvg = siljanWindVals.length > 0 ? siljanWindVals.reduce((a, b) => a + b, 0) / siljanWindVals.length : 0;
+          document.getElementById('siljanWindAvg').textContent = fmt(siljanWindAvg, 0) + ' km/h';
+
+          // Siljan regional nedbør 30d
+          const siljanRain30daily = calcDailyMax(data30d, 'rain_max_daily');
+          const siljanRain30vals = Object.values(siljanRain30daily);
+          let siljanRain30max = { val: 0, time: null };
+          let siljanRain30total = 0;
+          for (const v of siljanRain30vals) {
+            if (v.val > siljanRain30max.val) siljanRain30max = v;
+            siljanRain30total += v.val;
+          }
+          document.getElementById('siljanRain30max').textContent = fmt(siljanRain30max.val) + ' mm';
+          document.getElementById('siljanRain30date').textContent = fmtDayMonth(siljanRain30max.time);
+          document.getElementById('siljanRainAvg').textContent = fmt(siljanRain30total / siljanRain30vals.length) + ' mm';
 
           // Vind 30d
           const wind30 = findMinMax(data30d, 'wind_speed');
