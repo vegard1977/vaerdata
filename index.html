@@ -49,6 +49,10 @@
     }
     .card.regional { border-left: 3px solid #8b5cf6; }
     .card.metno { border-left: 3px solid #06b6d4; }
+    .card.alert { border-left: 3px solid #22c55e; }
+    .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
+    .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
+    .card.alert.red { border-left-color: #ef4444; background: #2a1e1e; }
     .value { font-size: 2rem; font-weight: bold; }
     .unit { font-size: 0.9rem; color: #888; }
     .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
@@ -73,11 +77,54 @@
     .uv-very-high { color: #ef4444; }
     .uv-extreme { color: #a855f7; }
     .wind-dir { font-size: 1.5rem; }
+    
+    /* Forecast styles */
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .forecast-day {
+      text-align: center;
+      padding: 10px 5px;
+      background: #1a1a2e;
+      border-radius: 8px;
+    }
+    .forecast-day .day-name { font-size: 0.75rem; color: #888; margin-bottom: 5px; }
+    .forecast-day .weather-icon { font-size: 1.5rem; margin: 5px 0; }
+    .forecast-day .temp-range { font-size: 0.8rem; }
+    .forecast-day .precip { font-size: 0.7rem; color: #60a5fa; margin-top: 3px; }
+    
+    /* Alert styles */
+    .alert-content { font-size: 0.85rem; line-height: 1.4; }
+    .alert-title { font-weight: bold; margin-bottom: 5px; }
+    .alert-desc { color: #aaa; }
+    .alert-none { color: #4ade80; }
+    
+    @media (max-width: 768px) {
+      .forecast-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .forecast-day:nth-child(n+5) {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>🌤️ Værdata Siljan</h1>
   <div class="updated">Sist oppdatert: <span id="lastUpdate">--</span></div>
+
+  <!-- Farevarsler øverst -->
+  <div class="grid" style="margin-bottom: 15px;">
+    <div class="card alert" id="alertCard" style="grid-column: 1 / -1;">
+      <h2>⚠️ Farevarsler</h2>
+      <div class="alert-content" id="alertContent">
+        <span class="alert-none">✓ Ingen aktive farevarsler for Siljan</span>
+      </div>
+    </div>
+  </div>
   
   <div class="section-title">📍 Lokale målinger</div>
   <div class="grid">
@@ -272,6 +319,20 @@
 
   <div class="section-title">🌐 Met.no Prognose</div>
   <div class="grid">
+    <!-- 7-dagers varsel -->
+    <div class="card metno" style="grid-column: 1 / -1;">
+      <h2>📅 Værvarsel 7 dager</h2>
+      <div class="forecast-grid" id="forecastGrid">
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+        <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
+      </div>
+    </div>
+
     <!-- Vindkast & Retning -->
     <div class="card metno">
       <h2>💨 Vindkast & Retning</h2>
@@ -290,14 +351,14 @@
       </div>
     </div>
 
-    <!-- Skydekke -->
+    <!-- Skydekke & Tåke -->
     <div class="card metno">
-      <h2>☁️ Skydekke</h2>
+      <h2>☁️ Skydekke & Tåke</h2>
       <span class="value" id="clouds">--</span><span class="unit">%</span>
       <div class="stats">
         <div class="stat">
-          <div class="stat-label">Snitt 24t</div>
-          <div class="stat-value" id="clouds24avg">--</div>
+          <div class="stat-label">Tåke</div>
+          <div class="stat-value" id="fog">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Min 24t</div>
@@ -314,22 +375,21 @@
 
     <!-- Nedbør & Torden sannsynlighet -->
     <div class="card metno">
-      <h2>🌧️ Sannsynlighet</h2>
+      <h2>🌧️ Sannsynlighet & Varsel</h2>
       <div class="stats-2">
         <div class="stat">
           <div class="stat-label">Nedbør nå</div>
           <div class="stat-value" id="precipProb">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Torden nå</div>
-          <div class="stat-value" id="thunderProb">--</div>
+          <div class="stat-label">Neste time</div>
+          <div class="stat-value" id="precipNextHour">--</div>
         </div>
       </div>
       <div class="stats-2">
         <div class="stat">
-          <div class="stat-label">Maks nedbør 24t</div>
-          <div class="stat-value" id="precipProb24max">--</div>
-          <div class="stat-detail" id="precipProb24time">--</div>
+          <div class="stat-label">Torden nå</div>
+          <div class="stat-value" id="thunderProb">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Maks torden 24t</div>
@@ -428,16 +488,44 @@
   </div>
 
   <script>
-    // Supabase config v1.5
+    // Supabase config v1.6
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
     //   v1.2 - Added rain statistics card
     //   v1.3 - Added wind card with Beaufort scale
     //   v1.4 - Added Siljan regional cards, changed wind to Snurrasen
-    //   v1.5 - Added UV index, met.no data (wind gust, direction, clouds, probabilities), reorganized layout
+    //   v1.5 - Added UV index, met.no data, reorganized layout
+    //   v1.6 - Added 7-day forecast, MetAlerts, fog, precip next hour (direct from met.no)
+    
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
+    const METNO_LAT = 59.2924;
+    const METNO_LON = 9.7072;
+
+    // Weather symbol to emoji mapping
+    const weatherIcons = {
+      clearsky_day: '☀️', clearsky_night: '🌙', clearsky_polartwilight: '🌅',
+      fair_day: '🌤️', fair_night: '🌤️', fair_polartwilight: '🌤️',
+      partlycloudy_day: '⛅', partlycloudy_night: '⛅', partlycloudy_polartwilight: '⛅',
+      cloudy: '☁️',
+      rainshowers_day: '🌦️', rainshowers_night: '🌦️', rainshowers_polartwilight: '🌦️',
+      rainshowersandthunder_day: '⛈️', rainshowersandthunder_night: '⛈️',
+      sleetshowers_day: '🌨️', sleetshowers_night: '🌨️',
+      snowshowers_day: '🌨️', snowshowers_night: '🌨️',
+      rain: '🌧️', heavyrain: '🌧️', lightrain: '🌧️',
+      rainandthunder: '⛈️', heavyrainandthunder: '⛈️', lightrainandthunder: '⛈️',
+      sleet: '🌨️', heavysleet: '🌨️', lightsleet: '🌨️',
+      snow: '❄️', heavysnow: '❄️', lightsnow: '❄️',
+      snowandthunder: '⛈️', sleetandthunder: '⛈️',
+      fog: '🌫️',
+    };
+
+    function getWeatherIcon(symbolCode) {
+      if (!symbolCode) return '❓';
+      const base = symbolCode.replace(/_day|_night|_polartwilight/g, '');
+      return weatherIcons[symbolCode] || weatherIcons[base] || '❓';
+    }
 
     async function fetchData(table, select = '*', filter = '', order = '', limit = '') {
       let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
@@ -450,6 +538,13 @@
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`
         }
+      });
+      return res.json();
+    }
+
+    async function fetchMetNo(endpoint) {
+      const res = await fetch(`https://api.met.no/weatherapi/${endpoint}`, {
+        headers: { 'User-Agent': 'SiljanWeather/1.0 github.com/vegard1977/vaerdata' }
       });
       return res.json();
     }
@@ -483,6 +578,18 @@
       if (!isoString) return '--';
       const d = new Date(isoString);
       return d.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' });
+    }
+
+    function fmtDayName(isoString) {
+      if (!isoString) return '--';
+      const d = new Date(isoString);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      if (d.toDateString() === today.toDateString()) return 'I dag';
+      if (d.toDateString() === tomorrow.toDateString()) return 'I morgen';
+      return d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric' });
     }
 
     function hoursAgo(h) {
@@ -601,6 +708,113 @@
       return dailyMax;
     }
 
+    async function updateMetNoData() {
+      try {
+        // Locationforecast for current data + forecast
+        const forecast = await fetchMetNo(`locationforecast/2.0/complete?lat=${METNO_LAT}&lon=${METNO_LON}`);
+        
+        if (forecast && forecast.properties && forecast.properties.timeseries) {
+          const now = forecast.properties.timeseries[0];
+          const instant = now.data.instant.details;
+          
+          // Current fog
+          document.getElementById('fog').textContent = fmt(instant.fog_area_fraction, 0) + '%';
+          
+          // Precip next hour
+          const precipNext = now.data.next_1_hours?.details?.precipitation_amount || 0;
+          document.getElementById('precipNextHour').textContent = fmt(precipNext, 1) + ' mm';
+          
+          // 7-day forecast
+          const dailyForecasts = {};
+          for (const ts of forecast.properties.timeseries) {
+            const date = getDateKey(ts.time);
+            const hour = new Date(ts.time).getHours();
+            
+            if (!dailyForecasts[date]) {
+              dailyForecasts[date] = { 
+                temps: [], 
+                symbol: null, 
+                precip: 0,
+                time: ts.time
+              };
+            }
+            
+            // Collect temps
+            if (ts.data.instant?.details?.air_temperature !== undefined) {
+              dailyForecasts[date].temps.push(ts.data.instant.details.air_temperature);
+            }
+            
+            // Get symbol from noon (12:00) or first available
+            if (hour === 12 && ts.data.next_6_hours?.summary?.symbol_code) {
+              dailyForecasts[date].symbol = ts.data.next_6_hours.summary.symbol_code;
+            } else if (!dailyForecasts[date].symbol && ts.data.next_6_hours?.summary?.symbol_code) {
+              dailyForecasts[date].symbol = ts.data.next_6_hours.summary.symbol_code;
+            }
+            
+            // Sum precipitation
+            if (ts.data.next_1_hours?.details?.precipitation_amount) {
+              dailyForecasts[date].precip += ts.data.next_1_hours.details.precipitation_amount;
+            }
+          }
+          
+          // Render 7-day forecast
+          const forecastDays = Object.keys(dailyForecasts).sort().slice(0, 7);
+          const forecastGrid = document.getElementById('forecastGrid');
+          forecastGrid.innerHTML = '';
+          
+          for (const date of forecastDays) {
+            const day = dailyForecasts[date];
+            const minTemp = Math.min(...day.temps);
+            const maxTemp = Math.max(...day.temps);
+            
+            const dayEl = document.createElement('div');
+            dayEl.className = 'forecast-day';
+            dayEl.innerHTML = `
+              <div class="day-name">${fmtDayName(day.time)}</div>
+              <div class="weather-icon">${getWeatherIcon(day.symbol)}</div>
+              <div class="temp-range">
+                <span class="temp-cold">${fmt(minTemp, 0)}°</span> / 
+                <span class="temp-warm">${fmt(maxTemp, 0)}°</span>
+              </div>
+              ${day.precip > 0.1 ? `<div class="precip">${fmt(day.precip, 1)} mm</div>` : '<div class="precip">-</div>'}
+            `;
+            forecastGrid.appendChild(dayEl);
+          }
+        }
+        
+        // MetAlerts
+        const alerts = await fetchMetNo(`metalerts/2.0/current.json?lat=${METNO_LAT}&lon=${METNO_LON}`);
+        const alertCard = document.getElementById('alertCard');
+        const alertContent = document.getElementById('alertContent');
+        
+        if (alerts && alerts.features && alerts.features.length > 0) {
+          const alert = alerts.features[0].properties;
+          const severity = alert.awareness_level || '';
+          
+          // Set card color based on severity
+          alertCard.className = 'card alert';
+          if (severity.includes('yellow') || severity.includes('Yellow')) {
+            alertCard.classList.add('yellow');
+          } else if (severity.includes('orange') || severity.includes('Orange')) {
+            alertCard.classList.add('orange');
+          } else if (severity.includes('red') || severity.includes('Red')) {
+            alertCard.classList.add('red');
+          }
+          
+          alertContent.innerHTML = `
+            <div class="alert-title">${alert.eventAwarenessName || alert.event || 'Farevarsel'}</div>
+            <div class="alert-desc">${alert.description || ''}</div>
+          `;
+        } else {
+          alertCard.className = 'card alert';
+          alertContent.innerHTML = '<span class="alert-none">✓ Ingen aktive farevarsler for Siljan</span>';
+        }
+        
+      } catch (err) {
+        console.error('Feil ved henting av met.no data:', err);
+      }
+    }
+
     async function updateDashboard() {
       try {
         // Siste måling
@@ -631,7 +845,7 @@
           uvLevelEl.textContent = uvLevel.name;
           uvLevelEl.className = 'beaufort ' + uvLevel.class;
 
-          // Met.no data
+          // Met.no data from database
           document.getElementById('windGust').textContent = fmt(d.wind_gust, 0);
           const windDir = getWindDirection(d.wind_direction);
           document.getElementById('windDirArrow').textContent = windDir.arrow;
@@ -692,18 +906,13 @@
 
           // Skydekke 24t
           const clouds24 = findMinMax(data24h, 'cloud_cover');
-          const cloudsAvg = data24h.filter(d => d.cloud_cover !== null).reduce((sum, d) => sum + d.cloud_cover, 0) / data24h.filter(d => d.cloud_cover !== null).length;
-          document.getElementById('clouds24avg').textContent = fmt(cloudsAvg, 0) + '%';
           document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '%';
           document.getElementById('clouds24minTime').textContent = fmtTime(clouds24.min.time);
           document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '%';
           document.getElementById('clouds24maxTime').textContent = fmtTime(clouds24.max.time);
 
-          // Sannsynligheter 24t
-          const precip24 = findMinMax(data24h, 'precipitation_probability');
+          // Torden 24t
           const thunder24 = findMinMax(data24h, 'thunder_probability');
-          document.getElementById('precipProb24max').textContent = fmt(precip24.max.val, 0) + '%';
-          document.getElementById('precipProb24time').textContent = fmtTime(precip24.max.time);
           document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '%';
           document.getElementById('thunderProb24time').textContent = fmtTime(thunder24.max.time);
 
@@ -873,8 +1082,13 @@
       }
     }
 
+    // Initial load
     updateDashboard();
-    setInterval(updateDashboard, 60000);
+    updateMetNoData();
+    
+    // Refresh intervals
+    setInterval(updateDashboard, 60000);      // Database data every minute
+    setInterval(updateMetNoData, 900000);     // Met.no data every 15 minutes
   </script>
 </body>
 </html>
