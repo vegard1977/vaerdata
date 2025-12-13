@@ -49,6 +49,7 @@
     }
     .card.regional { border-left: 3px solid #8b5cf6; }
     .card.metno { border-left: 3px solid #06b6d4; }
+    .card.water { border-left: 3px solid #3b82f6; }
     .card.alert { border-left: 3px solid #22c55e; }
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
@@ -78,6 +79,13 @@
     .uv-extreme { color: #a855f7; }
     .wind-dir { font-size: 1.5rem; }
     
+    /* Water level colors */
+    .fill-low { color: #60a5fa; }
+    .fill-mid { color: #4ade80; }
+    .fill-high { color: #fbbf24; }
+    .fill-full { color: #f97316; }
+    .fill-over { color: #ef4444; }
+    
     /* Forecast styles */
     .forecast-grid {
       display: grid;
@@ -102,12 +110,50 @@
     .alert-desc { color: #aaa; }
     .alert-none { color: #4ade80; }
     
+    /* Water level grid */
+    .water-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .water-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: #1a1a2e;
+      border-radius: 8px;
+    }
+    .water-item .reservoir-name { font-size: 0.75rem; color: #888; margin-bottom: 8px; font-weight: 500; }
+    .water-item .water-level { font-size: 1.1rem; font-weight: bold; }
+    .water-item .water-ref { font-size: 0.65rem; color: #666; margin-top: 4px; }
+    .water-item .fill-pct { font-size: 1.3rem; font-weight: bold; margin-top: 6px; }
+    .water-item .fill-bar {
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .water-item .fill-bar-inner {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+    
     @media (max-width: 768px) {
       .forecast-grid {
         grid-template-columns: repeat(4, 1fr);
       }
       .forecast-day:nth-child(n+5) {
         display: none;
+      }
+      .water-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .water-item:nth-child(5) {
+        grid-column: 1 / -1;
+        max-width: 50%;
+        margin: 0 auto;
       }
     }
   </style>
@@ -487,8 +533,26 @@
     </div>
   </div>
 
+  <div class="section-title">💧 Vannstander Siljanvassdraget</div>
+  <div class="grid">
+    <div class="card water" style="grid-column: 1 / -1;">
+      <h2>🏔️ Magasinfylling</h2>
+      <div class="water-grid" id="waterGrid">
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
+      </div>
+      <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
+        Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" style="color: #888;">Skagerak Kraft</a> · 
+        Oppdatert: <span id="waterUpdate">--</span>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Supabase config v1.6
+    // Supabase config v1.7
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
@@ -497,6 +561,7 @@
     //   v1.4 - Added Siljan regional cards, changed wind to Snurrasen
     //   v1.5 - Added UV index, met.no data, reorganized layout
     //   v1.6 - Added 7-day forecast, MetAlerts, fog, precip next hour (direct from met.no)
+    //   v1.7 - Added water levels section for Siljanvassdraget reservoirs
     
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
@@ -651,6 +716,15 @@
       return { arrow: arrows[index], text: directions[index] };
     }
 
+    function getFillColor(pct) {
+      if (pct === null || pct === undefined) return { class: '', color: '#666' };
+      if (pct > 100) return { class: 'fill-over', color: '#ef4444' };
+      if (pct >= 80) return { class: 'fill-full', color: '#f97316' };
+      if (pct >= 50) return { class: 'fill-mid', color: '#4ade80' };
+      if (pct >= 25) return { class: 'fill-low', color: '#60a5fa' };
+      return { class: 'fill-low', color: '#60a5fa' };
+    }
+
     function calcDailyRain(data) {
       const dailyMax = {};
       for (const d of data) {
@@ -706,6 +780,69 @@
         }
       }
       return dailyMax;
+    }
+
+    async function updateWaterLevels() {
+      try {
+        // Hent siste måling per magasin
+        const reservoirs = ['Mykle', 'Sporevann', 'Gorningen', 'Vanebuvann', 'Ramsvatn'];
+        const waterGrid = document.getElementById('waterGrid');
+        waterGrid.innerHTML = '';
+        
+        let latestUpdate = null;
+        
+        for (const reservoir of reservoirs) {
+          const data = await fetchData(
+            'water_levels', 
+            '*', 
+            `reservoir=eq.${reservoir}`, 
+            'timestamp.desc', 
+            '1'
+          );
+          
+          const item = document.createElement('div');
+          item.className = 'water-item';
+          
+          if (data.length > 0) {
+            const d = data[0];
+            const level = d.water_level;
+            const hrv = d.hrv;
+            const lrv = d.lrv;
+            const fillPct = hrv && lrv ? ((level - lrv) / (hrv - lrv) * 100) : null;
+            const fillStyle = getFillColor(fillPct);
+            const barWidth = Math.min(Math.max(fillPct || 0, 0), 120); // Cap at 120% for visual
+            
+            if (!latestUpdate || d.timestamp > latestUpdate) {
+              latestUpdate = d.timestamp;
+            }
+            
+            item.innerHTML = `
+              <div class="reservoir-name">${reservoir}</div>
+              <div class="water-level">${fmt(level, 2)} m</div>
+              <div class="water-ref">LRV: ${fmt(lrv, 1)} · HRV: ${fmt(hrv, 1)}</div>
+              <div class="fill-pct ${fillStyle.class}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%</div>
+              <div class="fill-bar">
+                <div class="fill-bar-inner" style="width: ${barWidth}%; background: ${fillStyle.color};"></div>
+              </div>
+            `;
+          } else {
+            item.innerHTML = `
+              <div class="reservoir-name">${reservoir}</div>
+              <div class="water-level">--</div>
+              <div class="water-ref">Ingen data</div>
+              <div class="fill-pct">--%</div>
+              <div class="fill-bar"><div class="fill-bar-inner" style="width: 0%;"></div></div>
+            `;
+          }
+          
+          waterGrid.appendChild(item);
+        }
+        
+        document.getElementById('waterUpdate').textContent = latestUpdate ? fmtDateTime(latestUpdate) : '--';
+        
+      } catch (err) {
+        console.error('Feil ved henting av vannstand:', err);
+      }
     }
 
     async function updateMetNoData() {
@@ -1085,10 +1222,12 @@
     // Initial load
     updateDashboard();
     updateMetNoData();
+    updateWaterLevels();
     
     // Refresh intervals
-    setInterval(updateDashboard, 60000);      // Database data every minute
-    setInterval(updateMetNoData, 900000);     // Met.no data every 15 minutes
+    setInterval(updateDashboard, 60000);       // Database data every minute
+    setInterval(updateMetNoData, 900000);      // Met.no data every 15 minutes
+    setInterval(updateWaterLevels, 3600000);   // Water levels every hour
   </script>
 </body>
 </html>
