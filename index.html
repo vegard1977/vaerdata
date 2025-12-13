@@ -769,7 +769,7 @@
     // v1.8: Get water alert level
     function getWaterAlertLevel(pct) {
       if (pct === null || pct === undefined) return null;
-      if (pct >= 110) return { level: 'danger', class: 'alert-water-danger', text: 'Kritisk høy' };
+      if (pct >= 110) return { level: 'danger', class: 'alert-water-danger', text: 'Over HRV' };
       if (pct >= 100) return { level: 'warning', class: 'alert-water-warning', text: 'Over HRV' };
       return null;
     }
