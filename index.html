@@ -50,6 +50,7 @@
     .card.regional { border-left: 3px solid #8b5cf6; }
     .card.metno { border-left: 3px solid #06b6d4; }
     .card.water { border-left: 3px solid #3b82f6; }
+    .card.police { border-left: 3px solid #f59e0b; }
     .card.alert { border-left: 3px solid #22c55e; }
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
@@ -79,12 +80,12 @@
     .uv-extreme { color: #a855f7; }
     .wind-dir { font-size: 1.5rem; }
     
-    /* Water level colors */
-    .fill-low { color: #60a5fa; }
-    .fill-mid { color: #4ade80; }
-    .fill-high { color: #fbbf24; }
-    .fill-full { color: #f97316; }
-    .fill-over { color: #ef4444; }
+    /* Water level colors - v1.8 */
+    .fill-critical { color: #ef4444; }
+    .fill-low { color: #f97316; }
+    .fill-normal { color: #4ade80; }
+    .fill-high { color: #eab308; }
+    .fill-over { color: #f97316; }
     
     /* Forecast styles */
     .forecast-grid {
@@ -109,6 +110,11 @@
     .alert-title { font-weight: bold; margin-bottom: 5px; }
     .alert-desc { color: #aaa; }
     .alert-none { color: #4ade80; }
+    .alert-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+    .alert-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .alert-water { color: #60a5fa; }
+    .alert-water-warning { color: #f97316; }
+    .alert-water-danger { color: #ef4444; }
     
     /* Water level grid */
     .water-grid {
@@ -140,6 +146,19 @@
       transition: width 0.3s;
     }
     
+    /* Police log styles */
+    .police-list { margin-top: 10px; }
+    .police-item {
+      padding: 12px;
+      background: #1a1a2e;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .police-item:last-child { margin-bottom: 0; }
+    .police-item .police-title { font-size: 0.85rem; font-weight: bold; color: #f59e0b; margin-bottom: 5px; }
+    .police-item .police-desc { font-size: 0.8rem; color: #aaa; line-height: 1.4; }
+    .police-item .police-time { font-size: 0.7rem; color: #666; margin-top: 5px; }
+    
     @media (max-width: 768px) {
       .forecast-grid {
         grid-template-columns: repeat(4, 1fr);
@@ -165,9 +184,9 @@
   <!-- Farevarsler øverst -->
   <div class="grid" style="margin-bottom: 15px;">
     <div class="card alert" id="alertCard" style="grid-column: 1 / -1;">
-      <h2>⚠️ Farevarsler</h2>
+      <h2>⚠️ Varsler</h2>
       <div class="alert-content" id="alertContent">
-        <span class="alert-none">✓ Ingen aktive farevarsler for Siljan</span>
+        <span class="alert-none">✓ Ingen aktive varsler</span>
       </div>
     </div>
   </div>
@@ -551,8 +570,24 @@
     </div>
   </div>
 
+  <div class="section-title">🚔 Politiloggen Siljan</div>
+  <div class="grid">
+    <div class="card police" style="grid-column: 1 / -1;">
+      <h2>📋 Siste hendelser</h2>
+      <div class="police-list" id="policeList">
+        <div class="police-item">
+          <div class="police-title">--</div>
+          <div class="police-desc">Laster...</div>
+        </div>
+      </div>
+      <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
+        Kilde: <a href="https://www.politiet.no/politiloggen" target="_blank" style="color: #888;">Politiet.no</a>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Supabase config v1.7
+    // Supabase config v1.8
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
@@ -562,11 +597,16 @@
     //   v1.5 - Added UV index, met.no data, reorganized layout
     //   v1.6 - Added 7-day forecast, MetAlerts, fog, precip next hour (direct from met.no)
     //   v1.7 - Added water levels section for Siljanvassdraget reservoirs
+    //   v1.8 - Updated water level colors, added water warnings to alert box, added police log section
     
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
     const METNO_LAT = 59.2924;
     const METNO_LON = 9.7072;
+
+    // Store water alerts globally for combining with MetAlerts
+    let waterAlerts = [];
+    let metAlerts = [];
 
     // Weather symbol to emoji mapping
     const weatherIcons = {
@@ -716,13 +756,22 @@
       return { arrow: arrows[index], text: directions[index] };
     }
 
+    // v1.8: Updated water level color logic
     function getFillColor(pct) {
       if (pct === null || pct === undefined) return { class: '', color: '#666' };
-      if (pct > 100) return { class: 'fill-over', color: '#ef4444' };
-      if (pct >= 80) return { class: 'fill-full', color: '#f97316' };
-      if (pct >= 50) return { class: 'fill-mid', color: '#4ade80' };
-      if (pct >= 25) return { class: 'fill-low', color: '#60a5fa' };
-      return { class: 'fill-low', color: '#60a5fa' };
+      if (pct < 0) return { class: 'fill-critical', color: '#ef4444' };       // Under LRV: Red
+      if (pct < 10) return { class: 'fill-low', color: '#f97316' };           // 0-10%: Orange
+      if (pct < 90) return { class: 'fill-normal', color: '#4ade80' };        // 10-90%: Green
+      if (pct <= 100) return { class: 'fill-high', color: '#eab308' };        // 90-100%: Yellow
+      return { class: 'fill-over', color: '#f97316' };                        // 100%+: Orange
+    }
+
+    // v1.8: Get water alert level
+    function getWaterAlertLevel(pct) {
+      if (pct === null || pct === undefined) return null;
+      if (pct >= 110) return { level: 'danger', class: 'alert-water-danger', text: 'Kritisk høy' };
+      if (pct >= 100) return { level: 'warning', class: 'alert-water-warning', text: 'Over HRV' };
+      return null;
     }
 
     function calcDailyRain(data) {
@@ -782,14 +831,47 @@
       return dailyMax;
     }
 
+    // v1.8: Update combined alerts display
+    function updateAlertDisplay() {
+      const alertCard = document.getElementById('alertCard');
+      const alertContent = document.getElementById('alertContent');
+      
+      const allAlerts = [...metAlerts, ...waterAlerts];
+      
+      if (allAlerts.length === 0) {
+        alertCard.className = 'card alert';
+        alertContent.innerHTML = '<span class="alert-none">✓ Ingen aktive varsler</span>';
+        return;
+      }
+      
+      // Determine card severity
+      let maxSeverity = 'yellow';
+      for (const alert of allAlerts) {
+        if (alert.severity === 'red') maxSeverity = 'red';
+        else if (alert.severity === 'orange' && maxSeverity !== 'red') maxSeverity = 'orange';
+      }
+      
+      alertCard.className = `card alert ${maxSeverity}`;
+      
+      let html = '';
+      for (const alert of allAlerts) {
+        html += `<div class="alert-item">
+          <div class="alert-title ${alert.titleClass || ''}">${alert.title}</div>
+          <div class="alert-desc">${alert.desc}</div>
+        </div>`;
+      }
+      
+      alertContent.innerHTML = html;
+    }
+
     async function updateWaterLevels() {
       try {
-        // Hent siste måling per magasin
         const reservoirs = ['Mykle', 'Sporevann', 'Gorningen', 'Vanebuvann', 'Ramsvatn'];
         const waterGrid = document.getElementById('waterGrid');
         waterGrid.innerHTML = '';
         
         let latestUpdate = null;
+        waterAlerts = []; // Reset water alerts
         
         for (const reservoir of reservoirs) {
           const data = await fetchData(
@@ -810,10 +892,21 @@
             const lrv = d.lrv;
             const fillPct = hrv && lrv ? ((level - lrv) / (hrv - lrv) * 100) : null;
             const fillStyle = getFillColor(fillPct);
-            const barWidth = Math.min(Math.max(fillPct || 0, 0), 120); // Cap at 120% for visual
+            const barWidth = Math.min(Math.max(fillPct || 0, 0), 120);
             
             if (!latestUpdate || d.timestamp > latestUpdate) {
               latestUpdate = d.timestamp;
+            }
+            
+            // v1.8: Check for water alerts
+            const alertLevel = getWaterAlertLevel(fillPct);
+            if (alertLevel) {
+              waterAlerts.push({
+                title: `🌊 ${reservoir}: ${fmt(fillPct, 0)}% fyllingsgrad`,
+                desc: alertLevel.text,
+                severity: alertLevel.level === 'danger' ? 'red' : 'orange',
+                titleClass: alertLevel.class
+              });
             }
             
             item.innerHTML = `
@@ -840,28 +933,67 @@
         
         document.getElementById('waterUpdate').textContent = latestUpdate ? fmtDateTime(latestUpdate) : '--';
         
+        // Update combined alert display
+        updateAlertDisplay();
+        
       } catch (err) {
         console.error('Feil ved henting av vannstand:', err);
       }
     }
 
+    // v1.8: Police log function
+    async function updatePoliceLog() {
+      try {
+        const data = await fetchData(
+          'police_events',
+          '*',
+          '',
+          'event_time.desc',
+          '3'
+        );
+        
+        const policeList = document.getElementById('policeList');
+        
+        if (data.length === 0) {
+          policeList.innerHTML = `
+            <div class="police-item">
+              <div class="police-desc" style="color: #666;">Ingen hendelser registrert</div>
+            </div>
+          `;
+          return;
+        }
+        
+        let html = '';
+        for (const event of data) {
+          html += `
+            <div class="police-item">
+              <div class="police-title">${event.title || 'Ukjent hendelse'}</div>
+              <div class="police-desc">${event.description || ''}</div>
+              <div class="police-time">${fmtDateTime(event.event_time)}</div>
+            </div>
+          `;
+        }
+        
+        policeList.innerHTML = html;
+        
+      } catch (err) {
+        console.error('Feil ved henting av politilogg:', err);
+      }
+    }
+
     async function updateMetNoData() {
       try {
-        // Locationforecast for current data + forecast
         const forecast = await fetchMetNo(`locationforecast/2.0/complete?lat=${METNO_LAT}&lon=${METNO_LON}`);
         
         if (forecast && forecast.properties && forecast.properties.timeseries) {
           const now = forecast.properties.timeseries[0];
           const instant = now.data.instant.details;
           
-          // Current fog
           document.getElementById('fog').textContent = fmt(instant.fog_area_fraction, 0) + '%';
           
-          // Precip next hour
           const precipNext = now.data.next_1_hours?.details?.precipitation_amount || 0;
           document.getElementById('precipNextHour').textContent = fmt(precipNext, 1) + ' mm';
           
-          // 7-day forecast
           const dailyForecasts = {};
           for (const ts of forecast.properties.timeseries) {
             const date = getDateKey(ts.time);
@@ -876,25 +1008,21 @@
               };
             }
             
-            // Collect temps
             if (ts.data.instant?.details?.air_temperature !== undefined) {
               dailyForecasts[date].temps.push(ts.data.instant.details.air_temperature);
             }
             
-            // Get symbol from noon (12:00) or first available
             if (hour === 12 && ts.data.next_6_hours?.summary?.symbol_code) {
               dailyForecasts[date].symbol = ts.data.next_6_hours.summary.symbol_code;
             } else if (!dailyForecasts[date].symbol && ts.data.next_6_hours?.summary?.symbol_code) {
               dailyForecasts[date].symbol = ts.data.next_6_hours.summary.symbol_code;
             }
             
-            // Sum precipitation
             if (ts.data.next_1_hours?.details?.precipitation_amount) {
               dailyForecasts[date].precip += ts.data.next_1_hours.details.precipitation_amount;
             }
           }
           
-          // Render 7-day forecast
           const forecastDays = Object.keys(dailyForecasts).sort().slice(0, 7);
           const forecastGrid = document.getElementById('forecastGrid');
           forecastGrid.innerHTML = '';
@@ -921,31 +1049,28 @@
         
         // MetAlerts
         const alerts = await fetchMetNo(`metalerts/2.0/current.json?lat=${METNO_LAT}&lon=${METNO_LON}`);
-        const alertCard = document.getElementById('alertCard');
-        const alertContent = document.getElementById('alertContent');
+        
+        metAlerts = []; // Reset met alerts
         
         if (alerts && alerts.features && alerts.features.length > 0) {
-          const alert = alerts.features[0].properties;
-          const severity = alert.awareness_level || '';
-          
-          // Set card color based on severity
-          alertCard.className = 'card alert';
-          if (severity.includes('yellow') || severity.includes('Yellow')) {
-            alertCard.classList.add('yellow');
-          } else if (severity.includes('orange') || severity.includes('Orange')) {
-            alertCard.classList.add('orange');
-          } else if (severity.includes('red') || severity.includes('Red')) {
-            alertCard.classList.add('red');
+          for (const feature of alerts.features) {
+            const alert = feature.properties;
+            const severity = alert.awareness_level || '';
+            
+            let severityLevel = 'yellow';
+            if (severity.includes('orange') || severity.includes('Orange')) severityLevel = 'orange';
+            if (severity.includes('red') || severity.includes('Red')) severityLevel = 'red';
+            
+            metAlerts.push({
+              title: alert.eventAwarenessName || alert.event || 'Farevarsel',
+              desc: alert.description || '',
+              severity: severityLevel
+            });
           }
-          
-          alertContent.innerHTML = `
-            <div class="alert-title">${alert.eventAwarenessName || alert.event || 'Farevarsel'}</div>
-            <div class="alert-desc">${alert.description || ''}</div>
-          `;
-        } else {
-          alertCard.className = 'card alert';
-          alertContent.innerHTML = '<span class="alert-none">✓ Ingen aktive farevarsler for Siljan</span>';
         }
+        
+        // Update combined alert display
+        updateAlertDisplay();
         
       } catch (err) {
         console.error('Feil ved henting av met.no data:', err);
@@ -954,7 +1079,6 @@
 
     async function updateDashboard() {
       try {
-        // Siste måling
         const latest = await fetchData('weather_data', '*', '', 'recorded_at.desc', '1');
         if (latest.length > 0) {
           const d = latest[0];
@@ -966,7 +1090,6 @@
           document.getElementById('press').textContent = fmt(d.pressure, 0);
           document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at);
           
-          // Vind
           const windSpeed = d.wind_speed || 0;
           document.getElementById('wind').textContent = fmt(windSpeed, 0);
           const beaufort = getBeaufort(windSpeed);
@@ -974,7 +1097,6 @@
           beaufortEl.textContent = beaufort.name;
           beaufortEl.className = 'beaufort ' + beaufort.class;
 
-          // UV-indeks
           const uvVal = d.uv_index || 0;
           document.getElementById('uv').textContent = fmt(uvVal, 1);
           const uvLevel = getUvLevel(uvVal);
@@ -982,7 +1104,6 @@
           uvLevelEl.textContent = uvLevel.name;
           uvLevelEl.className = 'beaufort ' + uvLevel.class;
 
-          // Met.no data from database
           document.getElementById('windGust').textContent = fmt(d.wind_gust, 0);
           const windDir = getWindDirection(d.wind_direction);
           document.getElementById('windDirArrow').textContent = windDir.arrow;
@@ -992,7 +1113,6 @@
           document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '%';
           document.getElementById('thunderProb').textContent = fmt(d.thunder_probability, 0) + '%';
 
-          // Siljan regional data
           document.getElementById('siljanTempMin').textContent = fmt(d.temp_min_daily) + '°C';
           document.getElementById('siljanTempMax').textContent = fmt(d.temp_max_daily) + '°C';
           document.getElementById('siljanRainMax').textContent = fmt(d.rain_max_daily);
@@ -1005,70 +1125,57 @@
           siljanBeaufortEl.className = 'beaufort ' + siljanBeaufort.class;
         }
 
-        // 24t data
         const data24h = await fetchData('weather_data', '*', `recorded_at=gte.${hoursAgo(24)}`);
         if (data24h.length > 0) {
-          // Temperatur
           const temp24 = findMinMax(data24h, 'temperature');
           document.getElementById('temp24min').textContent = fmt(temp24.min.val);
           document.getElementById('temp24max').textContent = fmt(temp24.max.val);
           document.getElementById('temp24times').textContent = `(${fmtTime(temp24.min.time)} / ${fmtTime(temp24.max.time)})`;
 
-          // Fuktighet
           const hum24 = findMinMax(data24h, 'humidity');
           document.getElementById('hum24min').textContent = fmt(hum24.min.val, 0);
           document.getElementById('hum24max').textContent = fmt(hum24.max.val, 0);
           document.getElementById('hum24times').textContent = `(${fmtTime(hum24.min.time)} / ${fmtTime(hum24.max.time)})`;
 
-          // Trykk
           const press24 = findMinMax(data24h, 'pressure');
           document.getElementById('press24min').textContent = fmt(press24.min.val, 0);
           document.getElementById('press24max').textContent = fmt(press24.max.val, 0);
           document.getElementById('press24times').textContent = `(${fmtTime(press24.min.time)} / ${fmtTime(press24.max.time)})`;
 
-          // Vind 24t
           const wind24 = findMinMax(data24h, 'wind_speed');
           document.getElementById('wind24max').textContent = fmt(wind24.max.val, 0) + ' km/h';
           document.getElementById('wind24time').textContent = fmtTime(wind24.max.time);
 
-          // UV 24t
           const uv24 = findMinMax(data24h, 'uv_index');
           document.getElementById('uv24max').textContent = fmt(uv24.max.val, 1);
           document.getElementById('uv24time').textContent = fmtTime(uv24.max.time);
 
-          // Vindkast 24t
           const gust24 = findMinMax(data24h, 'wind_gust');
           document.getElementById('gust24max').textContent = fmt(gust24.max.val, 0) + ' km/h';
           document.getElementById('gust24time').textContent = fmtTime(gust24.max.time);
 
-          // Skydekke 24t
           const clouds24 = findMinMax(data24h, 'cloud_cover');
           document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '%';
           document.getElementById('clouds24minTime').textContent = fmtTime(clouds24.min.time);
           document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '%';
           document.getElementById('clouds24maxTime').textContent = fmtTime(clouds24.max.time);
 
-          // Torden 24t
           const thunder24 = findMinMax(data24h, 'thunder_probability');
           document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '%';
           document.getElementById('thunderProb24time').textContent = fmtTime(thunder24.max.time);
 
-          // Maks irradiance i dag
           const irr24 = findMinMax(data24h, 'irradiance');
           document.getElementById('irrMax').textContent = fmt(irr24.max.val, 0) + ' W/m²';
           document.getElementById('irrMaxTime').textContent = fmtTime(irr24.max.time);
 
-          // Solskinnstimer
           const sunMinutes24 = data24h.filter(d => d.irradiance > 120).length;
           document.getElementById('sun24').textContent = fmt(sunMinutes24 / 60) + 't';
 
-          // Nedbør 24t
           const daily24 = calcDailyRain(data24h);
           const rain24total = Object.values(daily24).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain24').textContent = fmt(rain24total) + ' mm';
         }
 
-        // 3t trykk-trend
         const data3h = await fetchData('weather_data', 'pressure,recorded_at', `recorded_at=gte.${hoursAgo(3)}`, 'recorded_at.asc');
         if (data3h.length > 1) {
           const first = data3h[0].pressure;
@@ -1084,21 +1191,17 @@
           }
         }
 
-        // 7d data
         const data7d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(7)}`);
         if (data7d.length > 0) {
-          // Temperatur
           const temp7 = findMinMax(data7d, 'temperature');
           document.getElementById('temp7min').textContent = fmt(temp7.min.val);
           document.getElementById('temp7max').textContent = fmt(temp7.max.val);
           document.getElementById('temp7times').textContent = `(${fmtShortDate(temp7.min.time)} / ${fmtShortDate(temp7.max.time)})`;
 
-          // UV 7d
           const uv7 = findMinMax(data7d, 'uv_index');
           document.getElementById('uv7max').textContent = fmt(uv7.max.val, 1);
           document.getElementById('uv7date').textContent = fmtShortDate(uv7.max.time);
 
-          // Siljan regional temp 7d
           const siljanTempMin7 = findMinMax(data7d, 'temp_min_daily');
           const siljanTempMax7 = findMinMax(data7d, 'temp_max_daily');
           document.getElementById('siljanTempMin7').textContent = fmt(siljanTempMin7.min.val) + '°C';
@@ -1106,12 +1209,10 @@
           document.getElementById('siljanTempMax7').textContent = fmt(siljanTempMax7.max.val) + '°C';
           document.getElementById('siljanTempMax7date').textContent = fmtShortDate(siljanTempMax7.max.time);
 
-          // Siljan regional vind 7d
           const siljanWind7 = findMinMax(data7d, 'wind_max_daily');
           document.getElementById('siljanWind7max').textContent = fmt(siljanWind7.max.val, 0) + ' km/h';
           document.getElementById('siljanWind7date').textContent = fmtShortDate(siljanWind7.max.time);
 
-          // Siljan regional nedbør 7d
           const siljanRain7daily = calcDailyMax(data7d, 'rain_max_daily');
           const siljanRain7vals = Object.values(siljanRain7daily);
           let siljanRain7max = { val: 0, time: null };
@@ -1121,50 +1222,40 @@
           document.getElementById('siljanRain7max').textContent = fmt(siljanRain7max.val) + ' mm';
           document.getElementById('siljanRain7date').textContent = fmtDayMonth(siljanRain7max.time);
 
-          // Fuktighet snitt
           const hums = data7d.map(d => d.humidity).filter(h => h !== null);
           document.getElementById('hum7avg').textContent = fmt(hums.reduce((a, b) => a + b, 0) / hums.length, 0) + '%';
 
-          // Trykk snitt
           const presses = data7d.map(d => d.pressure).filter(p => p !== null);
           document.getElementById('press7avg').textContent = fmt(presses.reduce((a, b) => a + b, 0) / presses.length, 0);
 
-          // Vind 7d
           const wind7 = findMinMax(data7d, 'wind_speed');
           document.getElementById('wind7max').textContent = fmt(wind7.max.val, 0) + ' km/h';
           document.getElementById('wind7time').textContent = fmtShortDate(wind7.max.time);
 
-          // Solskinn 7d
           const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
           document.getElementById('sun7').textContent = fmt(sunMinutes7 / 60) + 't';
 
-          // Nedbør 7d
           const daily7 = calcDailyRain(data7d);
           const rain7total = Object.values(daily7).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain7').textContent = fmt(rain7total) + ' mm';
 
-          // Nedbør statistikk 7d
           const stats7 = calcRainStats(daily7);
           document.getElementById('rainMax7').textContent = fmt(stats7.maxDay.val) + ' mm';
           document.getElementById('rainMax7date').textContent = fmtDayMonth(stats7.maxDay.date);
           document.getElementById('rainDays7').textContent = stats7.rainDays;
         }
 
-        // 30d data
         const data30d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(30)}`);
         if (data30d.length > 0) {
-          // Temperatur
           const temp30 = findMinMax(data30d, 'temperature');
           document.getElementById('temp30min').textContent = fmt(temp30.min.val);
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
           document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
 
-          // UV 30d
           const uv30 = findMinMax(data30d, 'uv_index');
           document.getElementById('uv30max').textContent = fmt(uv30.max.val, 1);
           document.getElementById('uv30date').textContent = fmtShortDate(uv30.max.time);
 
-          // Siljan regional temp 30d
           const siljanTempMin30 = findMinMax(data30d, 'temp_min_daily');
           const siljanTempMax30 = findMinMax(data30d, 'temp_max_daily');
           document.getElementById('siljanTempMin30').textContent = fmt(siljanTempMin30.min.val) + '°C';
@@ -1172,17 +1263,14 @@
           document.getElementById('siljanTempMax30').textContent = fmt(siljanTempMax30.max.val) + '°C';
           document.getElementById('siljanTempMax30date').textContent = fmtShortDate(siljanTempMax30.max.time);
 
-          // Siljan regional vind 30d
           const siljanWind30 = findMinMax(data30d, 'wind_max_daily');
           document.getElementById('siljanWind30max').textContent = fmt(siljanWind30.max.val, 0) + ' km/h';
           document.getElementById('siljanWind30date').textContent = fmtShortDate(siljanWind30.max.time);
           
-          // Siljan vind snitt
           const siljanWindVals = data30d.map(d => d.wind_max_daily).filter(w => w !== null);
           const siljanWindAvg = siljanWindVals.length > 0 ? siljanWindVals.reduce((a, b) => a + b, 0) / siljanWindVals.length : 0;
           document.getElementById('siljanWindAvg').textContent = fmt(siljanWindAvg, 0) + ' km/h';
 
-          // Siljan regional nedbør 30d
           const siljanRain30daily = calcDailyMax(data30d, 'rain_max_daily');
           const siljanRain30vals = Object.values(siljanRain30daily);
           let siljanRain30max = { val: 0, time: null };
@@ -1195,17 +1283,14 @@
           document.getElementById('siljanRain30date').textContent = fmtDayMonth(siljanRain30max.time);
           document.getElementById('siljanRainAvg').textContent = fmt(siljanRain30total / siljanRain30vals.length) + ' mm';
 
-          // Vind 30d
           const wind30 = findMinMax(data30d, 'wind_speed');
           document.getElementById('wind30max').textContent = fmt(wind30.max.val, 0) + ' km/h';
           document.getElementById('wind30time').textContent = fmtShortDate(wind30.max.time);
 
-          // Nedbør 30d
           const daily30 = calcDailyRain(data30d);
           const rain30total = Object.values(daily30).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain30').textContent = fmt(rain30total) + ' mm';
 
-          // Nedbør statistikk 30d
           const stats30 = calcRainStats(daily30);
           document.getElementById('rainMax30').textContent = fmt(stats30.maxDay.val) + ' mm';
           document.getElementById('rainMax30date').textContent = fmtDayMonth(stats30.maxDay.date);
@@ -1223,11 +1308,13 @@
     updateDashboard();
     updateMetNoData();
     updateWaterLevels();
+    updatePoliceLog();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
     setInterval(updateMetNoData, 900000);      // Met.no data every 15 minutes
     setInterval(updateWaterLevels, 3600000);   // Water levels every hour
+    setInterval(updatePoliceLog, 300000);      // Police log every 5 minutes
   </script>
 </body>
 </html>
