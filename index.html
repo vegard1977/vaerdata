@@ -133,6 +133,10 @@
     .water-item .water-level { font-size: 1.1rem; font-weight: bold; }
     .water-item .water-ref { font-size: 0.65rem; color: #666; margin-top: 4px; }
     .water-item .fill-pct { font-size: 1.3rem; font-weight: bold; margin-top: 6px; }
+    .water-item .water-trend { font-size: 1rem; margin-left: 5px; }
+    .water-trend-up { color: #4ade80; }
+    .water-trend-down { color: #60a5fa; }
+    .water-trend-stable { color: #888; }
     .water-item .fill-bar {
       height: 4px;
       background: #333;
@@ -264,7 +268,7 @@
     <!-- Vind -->
     <div class="card">
       <h2>💨 Vind</h2>
-      <span class="value" id="wind">--</span><span class="unit">km/h</span>
+      <span class="value" id="wind">--</span><span class="unit">m/s</span>
       <div class="beaufort" id="beaufort">--</div>
       <div class="stats">
         <div class="stat">
@@ -401,7 +405,7 @@
     <!-- Vindkast & Retning -->
     <div class="card metno">
       <h2>💨 Vindkast & Retning</h2>
-      <span class="value" id="windGust">--</span><span class="unit">km/h</span>
+      <span class="value" id="windGust">--</span><span class="unit">m/s</span>
       <div class="stats-2">
         <div class="stat">
           <div class="stat-label">Retning</div>
@@ -507,7 +511,7 @@
     <!-- Siljan Vind Regional -->
     <div class="card regional">
       <h2>💨 Vind (regionalt maks)</h2>
-      <span class="value" id="siljanWindMax">--</span><span class="unit">km/h</span>
+      <span class="value" id="siljanWindMax">--</span><span class="unit">m/s</span>
       <div class="beaufort" id="siljanWindBeaufort">--</div>
       <div class="stats">
         <div class="stat">
@@ -565,6 +569,7 @@
       </div>
       <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
         Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" style="color: #888;">Skagerak Kraft</a> · 
+        Fyllingsgrad: LRV = 0%, HRV = 100% · 
         Oppdatert: <span id="waterUpdate">--</span>
       </div>
     </div>
@@ -587,7 +592,7 @@
   </div>
 
   <script>
-    // Supabase config v1.8
+    // Supabase config v1.9
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
@@ -598,6 +603,7 @@
     //   v1.6 - Added 7-day forecast, MetAlerts, fog, precip next hour (direct from met.no)
     //   v1.7 - Added water levels section for Siljanvassdraget reservoirs
     //   v1.8 - Updated water level colors, added water warnings to alert box, added police log section
+    //   v1.9 - Wind in m/s, water level trend arrows (3 days), fill percentage explanation
     
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
@@ -722,21 +728,27 @@
       return { min, max };
     }
 
-    function getBeaufort(kmh) {
-      if (kmh === null || kmh === undefined) return { name: '--', class: '' };
-      if (kmh < 1) return { name: 'Stille', class: 'wind-calm' };
-      if (kmh < 6) return { name: 'Flau vind', class: 'wind-calm' };
-      if (kmh < 12) return { name: 'Svak vind', class: 'wind-calm' };
-      if (kmh < 20) return { name: 'Lett bris', class: 'wind-calm' };
-      if (kmh < 29) return { name: 'Laber bris', class: 'wind-moderate' };
-      if (kmh < 39) return { name: 'Frisk bris', class: 'wind-moderate' };
-      if (kmh < 50) return { name: 'Liten kuling', class: 'wind-moderate' };
-      if (kmh < 62) return { name: 'Stiv kuling', class: 'wind-strong' };
-      if (kmh < 75) return { name: 'Sterk kuling', class: 'wind-strong' };
-      if (kmh < 89) return { name: 'Liten storm', class: 'wind-strong' };
-      if (kmh < 103) return { name: 'Full storm', class: 'wind-strong' };
-      if (kmh < 118) return { name: 'Sterk storm', class: 'wind-strong' };
+    function getBeaufort(ms) {
+      if (ms === null || ms === undefined) return { name: '--', class: '' };
+      if (ms < 0.3) return { name: 'Stille', class: 'wind-calm' };
+      if (ms < 1.6) return { name: 'Flau vind', class: 'wind-calm' };
+      if (ms < 3.4) return { name: 'Svak vind', class: 'wind-calm' };
+      if (ms < 5.5) return { name: 'Lett bris', class: 'wind-calm' };
+      if (ms < 8.0) return { name: 'Laber bris', class: 'wind-moderate' };
+      if (ms < 10.8) return { name: 'Frisk bris', class: 'wind-moderate' };
+      if (ms < 13.9) return { name: 'Liten kuling', class: 'wind-moderate' };
+      if (ms < 17.2) return { name: 'Stiv kuling', class: 'wind-strong' };
+      if (ms < 20.8) return { name: 'Sterk kuling', class: 'wind-strong' };
+      if (ms < 24.5) return { name: 'Liten storm', class: 'wind-strong' };
+      if (ms < 28.5) return { name: 'Full storm', class: 'wind-strong' };
+      if (ms < 32.7) return { name: 'Sterk storm', class: 'wind-strong' };
       return { name: 'Orkan', class: 'wind-strong' };
+    }
+
+    // Convert km/h to m/s
+    function kmhToMs(kmh) {
+      if (kmh === null || kmh === undefined) return null;
+      return kmh / 3.6;
     }
 
     function getUvLevel(uv) {
@@ -772,6 +784,19 @@
       if (pct >= 110) return { level: 'danger', class: 'alert-water-danger', text: 'Over HRV' };
       if (pct >= 100) return { level: 'warning', class: 'alert-water-warning', text: 'Over HRV' };
       return null;
+    }
+
+    // v1.9: Get water level trend (compare with 3 days ago)
+    function getWaterTrend(current, old) {
+      if (current === null || old === null) return { arrow: '', class: '' };
+      const diff = current - old;
+      if (diff > 0.1) return { arrow: '↑', class: 'water-trend-up' };
+      if (diff < -0.1) return { arrow: '↓', class: 'water-trend-down' };
+      return { arrow: '→', class: 'water-trend-stable' };
+    }
+
+    function daysAgoISO(d) {
+      return new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString();
     }
 
     function calcDailyRain(data) {
@@ -874,11 +899,21 @@
         waterAlerts = []; // Reset water alerts
         
         for (const reservoir of reservoirs) {
+          // Get latest measurement
           const data = await fetchData(
             'water_levels', 
             '*', 
             `reservoir=eq.${reservoir}`, 
             'timestamp.desc', 
+            '1'
+          );
+          
+          // Get measurement from ~3 days ago for trend
+          const oldData = await fetchData(
+            'water_levels',
+            '*',
+            `reservoir=eq.${reservoir}&timestamp=lte.${daysAgoISO(3)}`,
+            'timestamp.desc',
             '1'
           );
           
@@ -893,6 +928,10 @@
             const fillPct = hrv && lrv ? ((level - lrv) / (hrv - lrv) * 100) : null;
             const fillStyle = getFillColor(fillPct);
             const barWidth = Math.min(Math.max(fillPct || 0, 0), 120);
+            
+            // Calculate trend
+            const oldLevel = oldData.length > 0 ? oldData[0].water_level : null;
+            const trend = getWaterTrend(level, oldLevel);
             
             if (!latestUpdate || d.timestamp > latestUpdate) {
               latestUpdate = d.timestamp;
@@ -913,7 +952,7 @@
               <div class="reservoir-name">${reservoir}</div>
               <div class="water-level">${fmt(level, 2)} m</div>
               <div class="water-ref">LRV: ${fmt(lrv, 1)} · HRV: ${fmt(hrv, 1)}</div>
-              <div class="fill-pct ${fillStyle.class}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%</div>
+              <div class="fill-pct ${fillStyle.class}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%<span class="water-trend ${trend.class}">${trend.arrow}</span></div>
               <div class="fill-bar">
                 <div class="fill-bar-inner" style="width: ${barWidth}%; background: ${fillStyle.color};"></div>
               </div>
@@ -1090,8 +1129,8 @@
           document.getElementById('press').textContent = fmt(d.pressure, 0);
           document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at);
           
-          const windSpeed = d.wind_speed || 0;
-          document.getElementById('wind').textContent = fmt(windSpeed, 0);
+          const windSpeed = kmhToMs(d.wind_speed) || 0;
+          document.getElementById('wind').textContent = fmt(windSpeed, 1);
           const beaufort = getBeaufort(windSpeed);
           const beaufortEl = document.getElementById('beaufort');
           beaufortEl.textContent = beaufort.name;
@@ -1104,7 +1143,7 @@
           uvLevelEl.textContent = uvLevel.name;
           uvLevelEl.className = 'beaufort ' + uvLevel.class;
 
-          document.getElementById('windGust').textContent = fmt(d.wind_gust, 0);
+          document.getElementById('windGust').textContent = fmt(kmhToMs(d.wind_gust), 1);
           const windDir = getWindDirection(d.wind_direction);
           document.getElementById('windDirArrow').textContent = windDir.arrow;
           document.getElementById('windDirText').textContent = windDir.text;
@@ -1117,8 +1156,8 @@
           document.getElementById('siljanTempMax').textContent = fmt(d.temp_max_daily) + '°C';
           document.getElementById('siljanRainMax').textContent = fmt(d.rain_max_daily);
           
-          const siljanWind = d.wind_max_daily || 0;
-          document.getElementById('siljanWindMax').textContent = fmt(siljanWind, 0);
+          const siljanWind = kmhToMs(d.wind_max_daily) || 0;
+          document.getElementById('siljanWindMax').textContent = fmt(siljanWind, 1);
           const siljanBeaufort = getBeaufort(siljanWind);
           const siljanBeaufortEl = document.getElementById('siljanWindBeaufort');
           siljanBeaufortEl.textContent = siljanBeaufort.name;
@@ -1143,7 +1182,7 @@
           document.getElementById('press24times').textContent = `(${fmtTime(press24.min.time)} / ${fmtTime(press24.max.time)})`;
 
           const wind24 = findMinMax(data24h, 'wind_speed');
-          document.getElementById('wind24max').textContent = fmt(wind24.max.val, 0) + ' km/h';
+          document.getElementById('wind24max').textContent = fmt(kmhToMs(wind24.max.val), 1) + ' m/s';
           document.getElementById('wind24time').textContent = fmtTime(wind24.max.time);
 
           const uv24 = findMinMax(data24h, 'uv_index');
@@ -1151,7 +1190,7 @@
           document.getElementById('uv24time').textContent = fmtTime(uv24.max.time);
 
           const gust24 = findMinMax(data24h, 'wind_gust');
-          document.getElementById('gust24max').textContent = fmt(gust24.max.val, 0) + ' km/h';
+          document.getElementById('gust24max').textContent = fmt(kmhToMs(gust24.max.val), 1) + ' m/s';
           document.getElementById('gust24time').textContent = fmtTime(gust24.max.time);
 
           const clouds24 = findMinMax(data24h, 'cloud_cover');
@@ -1210,7 +1249,7 @@
           document.getElementById('siljanTempMax7date').textContent = fmtShortDate(siljanTempMax7.max.time);
 
           const siljanWind7 = findMinMax(data7d, 'wind_max_daily');
-          document.getElementById('siljanWind7max').textContent = fmt(siljanWind7.max.val, 0) + ' km/h';
+          document.getElementById('siljanWind7max').textContent = fmt(kmhToMs(siljanWind7.max.val), 1) + ' m/s';
           document.getElementById('siljanWind7date').textContent = fmtShortDate(siljanWind7.max.time);
 
           const siljanRain7daily = calcDailyMax(data7d, 'rain_max_daily');
@@ -1229,7 +1268,7 @@
           document.getElementById('press7avg').textContent = fmt(presses.reduce((a, b) => a + b, 0) / presses.length, 0);
 
           const wind7 = findMinMax(data7d, 'wind_speed');
-          document.getElementById('wind7max').textContent = fmt(wind7.max.val, 0) + ' km/h';
+          document.getElementById('wind7max').textContent = fmt(kmhToMs(wind7.max.val), 1) + ' m/s';
           document.getElementById('wind7time').textContent = fmtShortDate(wind7.max.time);
 
           const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
@@ -1264,12 +1303,12 @@
           document.getElementById('siljanTempMax30date').textContent = fmtShortDate(siljanTempMax30.max.time);
 
           const siljanWind30 = findMinMax(data30d, 'wind_max_daily');
-          document.getElementById('siljanWind30max').textContent = fmt(siljanWind30.max.val, 0) + ' km/h';
+          document.getElementById('siljanWind30max').textContent = fmt(kmhToMs(siljanWind30.max.val), 1) + ' m/s';
           document.getElementById('siljanWind30date').textContent = fmtShortDate(siljanWind30.max.time);
           
           const siljanWindVals = data30d.map(d => d.wind_max_daily).filter(w => w !== null);
           const siljanWindAvg = siljanWindVals.length > 0 ? siljanWindVals.reduce((a, b) => a + b, 0) / siljanWindVals.length : 0;
-          document.getElementById('siljanWindAvg').textContent = fmt(siljanWindAvg, 0) + ' km/h';
+          document.getElementById('siljanWindAvg').textContent = fmt(kmhToMs(siljanWindAvg), 1) + ' m/s';
 
           const siljanRain30daily = calcDailyMax(data30d, 'rain_max_daily');
           const siljanRain30vals = Object.values(siljanRain30daily);
@@ -1284,7 +1323,7 @@
           document.getElementById('siljanRainAvg').textContent = fmt(siljanRain30total / siljanRain30vals.length) + ' mm';
 
           const wind30 = findMinMax(data30d, 'wind_speed');
-          document.getElementById('wind30max').textContent = fmt(wind30.max.val, 0) + ' km/h';
+          document.getElementById('wind30max').textContent = fmt(kmhToMs(wind30.max.val), 1) + ' m/s';
           document.getElementById('wind30time').textContent = fmtShortDate(wind30.max.time);
 
           const daily30 = calcDailyRain(data30d);
