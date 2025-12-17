@@ -51,6 +51,8 @@
     .card.metno { border-left: 3px solid #06b6d4; }
     .card.water { border-left: 3px solid #3b82f6; }
     .card.police { border-left: 3px solid #f59e0b; }
+    .card.solar { border-left: 3px solid #fbbf24; }
+    .card.calculator { border-left: 3px solid #a855f7; }
     .card.alert { border-left: 3px solid #22c55e; }
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
@@ -226,6 +228,10 @@
       <span class="value" id="irr">--</span><span class="unit">W/m²</span>
       <div class="stats">
         <div class="stat">
+          <div class="stat-label">Lux</div>
+          <div class="stat-value sun" id="lux">--</div>
+        </div>
+        <div class="stat">
           <div class="stat-label">Maks i dag</div>
           <div class="stat-value" id="irrMax">--</div>
           <div class="stat-detail" id="irrMaxTime">--</div>
@@ -233,10 +239,6 @@
         <div class="stat">
           <div class="stat-label">Solskinn 24t</div>
           <div class="stat-value sun" id="sun24">--</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Solskinn 7d</div>
-          <div class="stat-value sun" id="sun7">--</div>
         </div>
       </div>
     </div>
@@ -477,32 +479,32 @@
       <div class="stats-2">
         <div class="stat">
           <div class="stat-label">Min i dag</div>
-          <div class="stat-value temp-cold" id="siljanTempMin">--</div>
+          <div class="stat-value" id="siljanTempMin">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Max i dag</div>
-          <div class="stat-value temp-warm" id="siljanTempMax">--</div>
+          <div class="stat-value" id="siljanTempMax">--</div>
         </div>
       </div>
       <div class="stats-4">
         <div class="stat">
           <div class="stat-label">Laveste 7d</div>
-          <div class="stat-value temp-cold" id="siljanTempMin7">--</div>
+          <div class="stat-value" id="siljanTempMin7">--</div>
           <div class="stat-detail" id="siljanTempMin7date">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Høyeste 7d</div>
-          <div class="stat-value temp-warm" id="siljanTempMax7">--</div>
+          <div class="stat-value" id="siljanTempMax7">--</div>
           <div class="stat-detail" id="siljanTempMax7date">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Laveste 30d</div>
-          <div class="stat-value temp-cold" id="siljanTempMin30">--</div>
+          <div class="stat-value" id="siljanTempMin30">--</div>
           <div class="stat-detail" id="siljanTempMin30date">--</div>
         </div>
         <div class="stat">
           <div class="stat-label">Høyeste 30d</div>
-          <div class="stat-value temp-warm" id="siljanTempMax30">--</div>
+          <div class="stat-value" id="siljanTempMax30">--</div>
           <div class="stat-detail" id="siljanTempMax30date">--</div>
         </div>
       </div>
@@ -591,8 +593,62 @@
     </div>
   </div>
 
+  <div class="section-title">☀️ Solcelleanlegg</div>
+  <div class="grid">
+    <div class="card solar">
+      <h2>🔌 Mitt anlegg (7.2 kWp)</h2>
+      <span class="value" id="solarInverter">--</span><span class="unit">kW</span>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Estimert</div>
+          <div class="stat-value sun" id="solarEstimated">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Ytelse</div>
+          <div class="stat-value" id="solarPerformance">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Irradiance</div>
+          <div class="stat-value" id="solarIrr">--</div>
+        </div>
+      </div>
+      <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
+        Oppdatert: <span id="solarUpdate">--</span>
+      </div>
+    </div>
+
+    <div class="card calculator">
+      <h2>🧮 PV-kalkulator</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Din kWp</div>
+          <input type="number" id="calcKwp" value="7.2" step="0.1" min="0.1" max="50" style="width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center;">
+        </div>
+        <div class="stat">
+          <div class="stat-label">Takvinkel (°)</div>
+          <input type="number" id="calcTilt" value="33" step="1" min="0" max="90" style="width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center;">
+        </div>
+        <div class="stat">
+          <div class="stat-label">Azimut (°)</div>
+          <input type="number" id="calcAzimuth" value="180" step="1" min="0" max="360" style="width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center;">
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <button onclick="calculatePV()" style="padding: 8px 20px; border-radius: 5px; border: none; background: #a855f7; color: white; cursor: pointer; font-weight: bold;">Beregn</button>
+      </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <div class="stat-label">Estimert produksjon nå</div>
+        <div class="value sun" id="calcResult">--</div>
+        <div class="unit">kW</div>
+      </div>
+      <div class="updated" style="margin-top: 10px; margin-bottom: 0;">
+        Azimut: 0°=N, 90°=Ø, 180°=S, 225°=SV
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Supabase config v1.9
+    // Supabase config v1.10
     // Changelog:
     //   v1.0 - Initial version
     //   v1.1 - Added timestamps for min/max values
@@ -604,6 +660,53 @@
     //   v1.7 - Added water levels section for Siljanvassdraget reservoirs
     //   v1.8 - Updated water level colors, added water warnings to alert box, added police log section
     //   v1.9 - Wind in m/s, water level trend arrows (3 days), fill percentage explanation
+    //   v1.10 - Temp colors (blue<0, red>=0), lux display, solar panel card, PV calculator
+
+    // v1.10: Temperature color (blue = frost, red = above zero)
+    function getTempClass(temp) {
+      if (temp === null || temp === undefined) return '';
+      return temp < 0 ? 'temp-cold' : 'temp-warm';
+    }
+
+    // v1.10: Format temp with color
+    function fmtTempColored(temp) {
+      if (temp === null || temp === undefined) return '--';
+      const cls = getTempClass(temp);
+      return `<span class="${cls}">${fmt(temp)}°C</span>`;
+    }
+
+    // v1.10: Sun position calculator
+    function getSunPosition(date, lat, lon) {
+      const rad = Math.PI / 180;
+      const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+      const declination = 23.45 * Math.sin(rad * (360/365) * (dayOfYear - 81));
+      const hourAngle = (date.getHours() + date.getMinutes()/60 - 12) * 15;
+      const latRad = lat * rad;
+      const declRad = declination * rad;
+      const hourRad = hourAngle * rad;
+      const altitude = Math.asin(Math.sin(latRad) * Math.sin(declRad) + Math.cos(latRad) * Math.cos(declRad) * Math.cos(hourRad)) / rad;
+      const azimuth = Math.atan2(Math.sin(hourRad), Math.cos(hourRad) * Math.sin(latRad) - Math.tan(declRad) * Math.cos(latRad)) / rad + 180;
+      return { altitude, azimuth };
+    }
+
+    // v1.10: Calculate angle of incidence for tilted panel
+    function getAngleOfIncidence(sunAlt, sunAz, tilt, panelAz) {
+      const rad = Math.PI / 180;
+      const sunAltRad = sunAlt * rad;
+      const sunAzRad = sunAz * rad;
+      const tiltRad = tilt * rad;
+      const panelAzRad = panelAz * rad;
+      const cosAOI = Math.sin(sunAltRad) * Math.cos(tiltRad) + Math.cos(sunAltRad) * Math.sin(tiltRad) * Math.cos(sunAzRad - panelAzRad);
+      return Math.max(0, cosAOI);
+    }
+
+    // v1.10: Estimate PV output
+    function estimatePV(irradiance, kwp, tilt, azimuth, derate = 0.78) {
+      const sun = getSunPosition(new Date(), METNO_LAT, METNO_LON);
+      if (sun.altitude <= 0) return 0;
+      const cosAOI = getAngleOfIncidence(sun.altitude, sun.azimuth, tilt, azimuth);
+      return (irradiance / 1000) * kwp * cosAOI * derate;
+    }
     
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
@@ -1020,6 +1123,42 @@
       }
     }
 
+    // v1.10: Solar data function
+    let currentIrradiance = 0;
+    async function updateSolarData() {
+      try {
+        const data = await fetchData(
+          'solar_data',
+          '*',
+          '',
+          'timestamp.desc',
+          '1'
+        );
+        
+        if (data.length > 0) {
+          const d = data[0];
+          currentIrradiance = d.irradiance || 0;
+          document.getElementById('lux').textContent = fmt(d.lux, 0) + ' lx';
+          document.getElementById('solarInverter').textContent = fmt(d.inverter_kw, 2);
+          document.getElementById('solarEstimated').textContent = fmt(d.estimated_kw, 2) + ' kW';
+          document.getElementById('solarPerformance').textContent = fmt(d.performance_ratio, 0) + '%';
+          document.getElementById('solarIrr').textContent = fmt(d.irradiance, 0) + ' W/m²';
+          document.getElementById('solarUpdate').textContent = fmtDateTime(d.timestamp);
+        }
+      } catch (err) {
+        console.error('Feil ved henting av solcelledata:', err);
+      }
+    }
+
+    // v1.10: PV Calculator
+    function calculatePV() {
+      const kwp = parseFloat(document.getElementById('calcKwp').value) || 0;
+      const tilt = parseFloat(document.getElementById('calcTilt').value) || 0;
+      const azimuth = parseFloat(document.getElementById('calcAzimuth').value) || 180;
+      const result = estimatePV(currentIrradiance, kwp, tilt, azimuth);
+      document.getElementById('calcResult').textContent = fmt(result, 2);
+    }
+
     async function updateMetNoData() {
       try {
         const forecast = await fetchMetNo(`locationforecast/2.0/complete?lat=${METNO_LAT}&lon=${METNO_LON}`);
@@ -1073,12 +1212,14 @@
             
             const dayEl = document.createElement('div');
             dayEl.className = 'forecast-day';
+            const minCls = getTempClass(minTemp);
+            const maxCls = getTempClass(maxTemp);
             dayEl.innerHTML = `
               <div class="day-name">${fmtDayName(day.time)}</div>
               <div class="weather-icon">${getWeatherIcon(day.symbol)}</div>
               <div class="temp-range">
-                <span class="temp-cold">${fmt(minTemp, 0)}°</span> / 
-                <span class="temp-warm">${fmt(maxTemp, 0)}°</span>
+                <span class="${minCls}">${fmt(minTemp, 0)}°</span> / 
+                <span class="${maxCls}">${fmt(maxTemp, 0)}°</span>
               </div>
               ${day.precip > 0.1 ? `<div class="precip">${fmt(day.precip, 1)} mm</div>` : '<div class="precip">-</div>'}
             `;
@@ -1152,8 +1293,8 @@
           document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '%';
           document.getElementById('thunderProb').textContent = fmt(d.thunder_probability, 0) + '%';
 
-          document.getElementById('siljanTempMin').textContent = fmt(d.temp_min_daily) + '°C';
-          document.getElementById('siljanTempMax').textContent = fmt(d.temp_max_daily) + '°C';
+          document.getElementById('siljanTempMin').innerHTML = fmtTempColored(d.temp_min_daily);
+          document.getElementById('siljanTempMax').innerHTML = fmtTempColored(d.temp_max_daily);
           document.getElementById('siljanRainMax').textContent = fmt(d.rain_max_daily);
           
           const siljanWind = kmhToMs(d.wind_max_daily) || 0;
@@ -1243,9 +1384,9 @@
 
           const siljanTempMin7 = findMinMax(data7d, 'temp_min_daily');
           const siljanTempMax7 = findMinMax(data7d, 'temp_max_daily');
-          document.getElementById('siljanTempMin7').textContent = fmt(siljanTempMin7.min.val) + '°C';
+          document.getElementById('siljanTempMin7').innerHTML = fmtTempColored(siljanTempMin7.min.val);
           document.getElementById('siljanTempMin7date').textContent = fmtShortDate(siljanTempMin7.min.time);
-          document.getElementById('siljanTempMax7').textContent = fmt(siljanTempMax7.max.val) + '°C';
+          document.getElementById('siljanTempMax7').innerHTML = fmtTempColored(siljanTempMax7.max.val);
           document.getElementById('siljanTempMax7date').textContent = fmtShortDate(siljanTempMax7.max.time);
 
           const siljanWind7 = findMinMax(data7d, 'wind_max_daily');
@@ -1297,9 +1438,9 @@
 
           const siljanTempMin30 = findMinMax(data30d, 'temp_min_daily');
           const siljanTempMax30 = findMinMax(data30d, 'temp_max_daily');
-          document.getElementById('siljanTempMin30').textContent = fmt(siljanTempMin30.min.val) + '°C';
+          document.getElementById('siljanTempMin30').innerHTML = fmtTempColored(siljanTempMin30.min.val);
           document.getElementById('siljanTempMin30date').textContent = fmtShortDate(siljanTempMin30.min.time);
-          document.getElementById('siljanTempMax30').textContent = fmt(siljanTempMax30.max.val) + '°C';
+          document.getElementById('siljanTempMax30').innerHTML = fmtTempColored(siljanTempMax30.max.val);
           document.getElementById('siljanTempMax30date').textContent = fmtShortDate(siljanTempMax30.max.time);
 
           const siljanWind30 = findMinMax(data30d, 'wind_max_daily');
@@ -1348,12 +1489,14 @@
     updateMetNoData();
     updateWaterLevels();
     updatePoliceLog();
+    updateSolarData();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
     setInterval(updateMetNoData, 900000);      // Met.no data every 15 minutes
     setInterval(updateWaterLevels, 3600000);   // Water levels every hour
     setInterval(updatePoliceLog, 300000);      // Police log every 5 minutes
+    setInterval(updateSolarData, 60000);       // Solar data every minute
   </script>
 </body>
 </html>
