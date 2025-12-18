@@ -661,6 +661,7 @@
     //   v1.8 - Updated water level colors, added water warnings to alert box, added police log section
     //   v1.9 - Wind in m/s, water level trend arrows (3 days), fill percentage explanation
     //   v1.10 - Temp colors (blue<0, red>=0), lux display, solar panel card, PV calculator
+    //   v1.10.1 - Bugfix: removed sun7 reference that crashed data7d/30d block
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1412,8 +1413,7 @@
           document.getElementById('wind7max').textContent = fmt(kmhToMs(wind7.max.val), 1) + ' m/s';
           document.getElementById('wind7time').textContent = fmtShortDate(wind7.max.time);
 
-          const sunMinutes7 = data7d.filter(d => d.irradiance > 120).length;
-          document.getElementById('sun7').textContent = fmt(sunMinutes7 / 60) + 't';
+          // sun7 removed - no UI element exists
 
           const daily7 = calcDailyRain(data7d);
           const rain7total = Object.values(daily7).reduce((sum, d) => sum + d.val, 0);
