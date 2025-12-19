@@ -1,3 +1,4 @@
+<!-- Værdata Siljan v1.10.3 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -663,6 +664,7 @@
     //   v1.10 - Temp colors (blue<0, red>=0), lux display, solar panel card, PV calculator
     //   v1.10.1 - Bugfix: removed sun7 reference that crashed data7d/30d block
     //   v1.10.2 - Bugfix: NaN in rain average when no data
+    //   v1.10.3 - Bugfix: regional rain shows date even when 0mm
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1399,10 +1401,14 @@
           const siljanRain7vals = Object.values(siljanRain7daily);
           let siljanRain7max = { val: 0, time: null };
           for (const v of siljanRain7vals) {
-            if (v.val > siljanRain7max.val) siljanRain7max = v;
+            if (v.val >= siljanRain7max.val) siljanRain7max = v;  // >= to capture date even when 0
           }
-          document.getElementById('siljanRain7max').textContent = fmt(siljanRain7max.val) + ' mm';
-          document.getElementById('siljanRain7date').textContent = fmtDayMonth(siljanRain7max.time);
+          document.getElementById('siljanRain7max').textContent = siljanRain7vals.length > 0 
+            ? fmt(siljanRain7max.val) + ' mm' 
+            : '-- mm';
+          document.getElementById('siljanRain7date').textContent = siljanRain7max.time 
+            ? fmtDayMonth(siljanRain7max.time) 
+            : (siljanRain7vals.length > 0 ? 'ingen nedbør' : '--');
 
           const hums = data7d.map(d => d.humidity).filter(h => h !== null);
           document.getElementById('hum7avg').textContent = fmt(hums.reduce((a, b) => a + b, 0) / hums.length, 0) + '%';
@@ -1459,11 +1465,15 @@
           let siljanRain30max = { val: 0, time: null };
           let siljanRain30total = 0;
           for (const v of siljanRain30vals) {
-            if (v.val > siljanRain30max.val) siljanRain30max = v;
+            if (v.val >= siljanRain30max.val) siljanRain30max = v;  // >= to capture date even when 0
             siljanRain30total += v.val;
           }
-          document.getElementById('siljanRain30max').textContent = fmt(siljanRain30max.val) + ' mm';
-          document.getElementById('siljanRain30date').textContent = fmtDayMonth(siljanRain30max.time);
+          document.getElementById('siljanRain30max').textContent = siljanRain30vals.length > 0 
+            ? fmt(siljanRain30max.val) + ' mm' 
+            : '-- mm';
+          document.getElementById('siljanRain30date').textContent = siljanRain30max.time 
+            ? fmtDayMonth(siljanRain30max.time) 
+            : (siljanRain30vals.length > 0 ? 'ingen nedbør' : '--');
           document.getElementById('siljanRainAvg').textContent = siljanRain30vals.length > 0 
             ? fmt(siljanRain30total / siljanRain30vals.length) + ' mm' 
             : '-- mm';
