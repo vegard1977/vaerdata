@@ -662,6 +662,7 @@
     //   v1.9 - Wind in m/s, water level trend arrows (3 days), fill percentage explanation
     //   v1.10 - Temp colors (blue<0, red>=0), lux display, solar panel card, PV calculator
     //   v1.10.1 - Bugfix: removed sun7 reference that crashed data7d/30d block
+    //   v1.10.2 - Bugfix: NaN in rain average when no data
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1447,9 +1448,11 @@
           document.getElementById('siljanWind30max').textContent = fmt(kmhToMs(siljanWind30.max.val), 1) + ' m/s';
           document.getElementById('siljanWind30date').textContent = fmtShortDate(siljanWind30.max.time);
           
-          const siljanWindVals = data30d.map(d => d.wind_max_daily).filter(w => w !== null);
-          const siljanWindAvg = siljanWindVals.length > 0 ? siljanWindVals.reduce((a, b) => a + b, 0) / siljanWindVals.length : 0;
-          document.getElementById('siljanWindAvg').textContent = fmt(kmhToMs(siljanWindAvg), 1) + ' m/s';
+          const siljanWindVals = data30d.map(d => d.wind_max_daily).filter(w => w !== null && w !== undefined);
+          const siljanWindAvg = siljanWindVals.length > 0 ? siljanWindVals.reduce((a, b) => a + b, 0) / siljanWindVals.length : null;
+          document.getElementById('siljanWindAvg').textContent = siljanWindAvg !== null 
+            ? fmt(kmhToMs(siljanWindAvg), 1) + ' m/s' 
+            : '-- m/s';
 
           const siljanRain30daily = calcDailyMax(data30d, 'rain_max_daily');
           const siljanRain30vals = Object.values(siljanRain30daily);
@@ -1461,7 +1464,9 @@
           }
           document.getElementById('siljanRain30max').textContent = fmt(siljanRain30max.val) + ' mm';
           document.getElementById('siljanRain30date').textContent = fmtDayMonth(siljanRain30max.time);
-          document.getElementById('siljanRainAvg').textContent = fmt(siljanRain30total / siljanRain30vals.length) + ' mm';
+          document.getElementById('siljanRainAvg').textContent = siljanRain30vals.length > 0 
+            ? fmt(siljanRain30total / siljanRain30vals.length) + ' mm' 
+            : '-- mm';
 
           const wind30 = findMinMax(data30d, 'wind_speed');
           document.getElementById('wind30max').textContent = fmt(kmhToMs(wind30.max.val), 1) + ' m/s';
