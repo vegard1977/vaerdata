@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.3 -->
+<!-- Værdata Siljan v1.10.4 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -665,6 +665,7 @@
     //   v1.10.1 - Bugfix: removed sun7 reference that crashed data7d/30d block
     //   v1.10.2 - Bugfix: NaN in rain average when no data
     //   v1.10.3 - Bugfix: regional rain shows date even when 0mm
+    //   v1.10.4 - Lux calculated from weather_data irradiance (updates every minute)
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1142,7 +1143,7 @@
         if (data.length > 0) {
           const d = data[0];
           currentIrradiance = d.irradiance || 0;
-          document.getElementById('lux').textContent = fmt(d.lux, 0) + ' lx';
+          // lux now comes from weather_data (v1.10.4)
           document.getElementById('solarInverter').textContent = fmt(d.inverter_kw, 2);
           document.getElementById('solarEstimated').textContent = fmt(d.estimated_kw, 2) + ' kW';
           document.getElementById('solarPerformance').textContent = fmt(d.performance_ratio, 0) + '%';
@@ -1268,6 +1269,9 @@
           const d = latest[0];
           document.getElementById('temp').textContent = fmt(d.temperature);
           document.getElementById('irr').textContent = fmt(d.irradiance, 0);
+          // v1.10.4: Lux from weather_data (approx 120 lux per W/m²)
+          const luxValue = (d.irradiance || 0) * 120;
+          document.getElementById('lux').textContent = luxValue > 0 ? fmt(luxValue, 0) + ' lx' : '0 lx';
           document.getElementById('rainToday').textContent = fmt(d.rain_today);
           document.getElementById('hum').textContent = fmt(d.humidity, 0);
           document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
