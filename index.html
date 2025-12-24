@@ -1269,9 +1269,8 @@
           const d = latest[0];
           document.getElementById('temp').textContent = fmt(d.temperature);
           document.getElementById('irr').textContent = fmt(d.irradiance, 0);
-          // v1.10.4: Lux from weather_data (approx 120 lux per W/m²)
-          const luxValue = (d.irradiance || 0) * 120;
-          document.getElementById('lux').textContent = luxValue > 0 ? fmt(luxValue, 0) + ' lx' : '0 lx';
+          // v1.10.5: Lux direct from sensor
+          document.getElementById('lux').textContent = (d.lux || 0) > 0 ? fmt(d.lux, 0) + ' lx' : '0 lx';
           document.getElementById('rainToday').textContent = fmt(d.rain_today);
           document.getElementById('hum').textContent = fmt(d.humidity, 0);
           document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
