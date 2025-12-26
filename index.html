@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.51 -->
+<!-- Værdata Siljan v1.10.6 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -54,6 +54,8 @@
     .card.police { border-left: 3px solid #f59e0b; }
     .card.solar { border-left: 3px solid #fbbf24; }
     .card.calculator { border-left: 3px solid #a855f7; }
+    .card.daylight { border-left: 3px solid #f59e0b; }
+    .sun-times { font-size: 0.9rem; color: #fbbf24; margin-top: 5px; }
     .card.alert { border-left: 3px solid #22c55e; }
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
@@ -264,6 +266,39 @@
           <div class="stat-label">Maks 30d</div>
           <div class="stat-value" id="uv30max">--</div>
           <div class="stat-detail" id="uv30date">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dagslys -->
+    <div class="card daylight">
+      <h2>🌅 Dagslys</h2>
+      <span class="value" id="dayLength">--</span><span class="unit" id="dayLengthUnit">t</span>
+      <div class="sun-times" id="sunTimes">☀️ -- → --</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Endring i dag</div>
+          <div class="stat-value" id="dayChange">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Siste 7d</div>
+          <div class="stat-value" id="dayChange7">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Siste 30d</div>
+          <div class="stat-value" id="dayChange30">--</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label" id="sinceSolsticeLabel">Siden vintersolverv</div>
+          <div class="stat-value" id="sinceSolstice">--</div>
+          <div class="stat-detail" id="sinceSolsticeDays">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label" id="toSolsticeLabel">Til sommersolverv</div>
+          <div class="stat-value" id="toSolstice">--</div>
+          <div class="stat-detail" id="toSolsticeDate">--</div>
         </div>
       </div>
     </div>
@@ -666,6 +701,8 @@
     //   v1.10.2 - Bugfix: NaN in rain average when no data
     //   v1.10.3 - Bugfix: regional rain shows date even when 0mm
     //   v1.10.4 - Lux calculated from weather_data irradiance (updates every minute)
+    //   v1.10.5 - Lux direct from sensor in weather_data
+    //   v1.10.6 - Added daylight card with sunrise/sunset and solstice tracking
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -711,6 +748,167 @@
       if (sun.altitude <= 0) return 0;
       const cosAOI = getAngleOfIncidence(sun.altitude, sun.azimuth, tilt, azimuth);
       return (irradiance / 1000) * kwp * cosAOI * derate;
+    }
+
+    // v1.10.6: Daylight calculations
+    function calculateSunTimes(date, lat, lon) {
+      const rad = Math.PI / 180;
+      const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+      
+      // Solar declination
+      const declination = 23.45 * Math.sin(rad * (360/365) * (dayOfYear - 81));
+      
+      // Hour angle at sunrise/sunset (when sun is at horizon, -0.833° for refraction)
+      const latRad = lat * rad;
+      const declRad = declination * rad;
+      const cosHourAngle = (Math.sin(-0.833 * rad) - Math.sin(latRad) * Math.sin(declRad)) / (Math.cos(latRad) * Math.cos(declRad));
+      
+      // Check for polar day/night
+      if (cosHourAngle < -1) return { sunrise: null, sunset: null, dayLength: 24 * 60, polarDay: true };
+      if (cosHourAngle > 1) return { sunrise: null, sunset: null, dayLength: 0, polarNight: true };
+      
+      const hourAngle = Math.acos(cosHourAngle) / rad;
+      
+      // Solar noon (approximate, ignoring equation of time for simplicity)
+      const solarNoon = 12 - lon / 15 + 1; // +1 for CET timezone
+      
+      const sunriseHour = solarNoon - hourAngle / 15;
+      const sunsetHour = solarNoon + hourAngle / 15;
+      const dayLength = (sunsetHour - sunriseHour) * 60; // in minutes
+      
+      return {
+        sunrise: sunriseHour,
+        sunset: sunsetHour,
+        dayLength: dayLength
+      };
+    }
+
+    function formatHourToTime(hour) {
+      if (hour === null) return '--:--';
+      const h = Math.floor(hour);
+      const m = Math.floor((hour - h) * 60);
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+
+    function formatDayLength(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = Math.round(minutes % 60);
+      return `${hours}t ${mins}m`;
+    }
+
+    function formatChange(minutes, forceSign = true) {
+      const absMin = Math.abs(minutes);
+      const sign = minutes >= 0 ? '+' : '-';
+      if (absMin >= 60) {
+        const hours = Math.floor(absMin / 60);
+        const mins = Math.round(absMin % 60);
+        return `${forceSign ? sign : ''}${hours}t ${mins}m`;
+      }
+      return `${forceSign ? sign : ''}${Math.round(absMin)} min`;
+    }
+
+    function getSolstices(year) {
+      // Approximate solstice dates
+      return {
+        winter: new Date(year, 11, 21), // Dec 21
+        summer: new Date(year, 5, 21)   // Jun 21
+      };
+    }
+
+    function updateDaylightCard() {
+      const today = new Date();
+      const todaySun = calculateSunTimes(today, METNO_LAT, METNO_LON);
+      
+      // Day length display
+      if (todaySun.polarDay) {
+        document.getElementById('dayLength').textContent = '24';
+        document.getElementById('dayLengthUnit').textContent = 't (midnattssol)';
+      } else if (todaySun.polarNight) {
+        document.getElementById('dayLength').textContent = '0';
+        document.getElementById('dayLengthUnit').textContent = 't (mørketid)';
+      } else {
+        const hours = Math.floor(todaySun.dayLength / 60);
+        const mins = Math.round(todaySun.dayLength % 60);
+        document.getElementById('dayLength').textContent = `${hours}t ${mins}m`;
+        document.getElementById('dayLengthUnit').textContent = '';
+        document.getElementById('sunTimes').textContent = `☀️ ${formatHourToTime(todaySun.sunrise)} → ${formatHourToTime(todaySun.sunset)}`;
+      }
+      
+      // Yesterday comparison
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdaySun = calculateSunTimes(yesterday, METNO_LAT, METNO_LON);
+      const changeToday = todaySun.dayLength - yesterdaySun.dayLength;
+      const changeTodayEl = document.getElementById('dayChange');
+      changeTodayEl.textContent = formatChange(changeToday);
+      changeTodayEl.className = 'stat-value ' + (changeToday >= 0 ? 'trend-up' : 'trend-down');
+      
+      // 7 days ago
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const weekAgoSun = calculateSunTimes(weekAgo, METNO_LAT, METNO_LON);
+      const change7 = todaySun.dayLength - weekAgoSun.dayLength;
+      const change7El = document.getElementById('dayChange7');
+      change7El.textContent = formatChange(change7);
+      change7El.className = 'stat-value ' + (change7 >= 0 ? 'trend-up' : 'trend-down');
+      
+      // 30 days ago
+      const monthAgo = new Date(today);
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      const monthAgoSun = calculateSunTimes(monthAgo, METNO_LAT, METNO_LON);
+      const change30 = todaySun.dayLength - monthAgoSun.dayLength;
+      const change30El = document.getElementById('dayChange30');
+      change30El.textContent = formatChange(change30);
+      change30El.className = 'stat-value ' + (change30 >= 0 ? 'trend-up' : 'trend-down');
+      
+      // Solstice calculations
+      const year = today.getFullYear();
+      const solstices = getSolstices(year);
+      const nextYearSolstices = getSolstices(year + 1);
+      
+      // Determine if we're in "getting longer" or "getting shorter" phase
+      const summerSolstice = today < solstices.summer ? solstices.summer : nextYearSolstices.summer;
+      const winterSolstice = today < solstices.winter ? solstices.winter : 
+                            (today > solstices.summer ? solstices.winter : getSolstices(year - 1).winter);
+      
+      const daysGettingLonger = today > solstices.winter || today < solstices.summer;
+      
+      if (daysGettingLonger) {
+        // Winter -> Summer: days getting longer
+        const prevWinter = today < solstices.summer ? solstices.winter : getSolstices(year - 1).winter;
+        if (today > new Date(year, 0, 1) && today < solstices.summer) {
+          // After Jan 1, before summer solstice - use this year's winter or last year's
+        }
+        const actualPrevWinter = today.getMonth() < 6 ? getSolstices(year - 1).winter : solstices.winter;
+        const winterSun = calculateSunTimes(actualPrevWinter, METNO_LAT, METNO_LON);
+        const sinceSolstice = todaySun.dayLength - winterSun.dayLength;
+        const daysSince = Math.floor((today - actualPrevWinter) / 86400000);
+        const daysTo = Math.floor((summerSolstice - today) / 86400000);
+        
+        document.getElementById('sinceSolsticeLabel').textContent = 'Siden vintersolverv';
+        document.getElementById('sinceSolstice').textContent = formatChange(sinceSolstice);
+        document.getElementById('sinceSolstice').className = 'stat-value trend-up';
+        document.getElementById('sinceSolsticeDays').textContent = `${daysSince} dager`;
+        
+        document.getElementById('toSolsticeLabel').textContent = 'Til sommersolverv';
+        document.getElementById('toSolstice').textContent = `${daysTo} dager`;
+        document.getElementById('toSolsticeDate').textContent = '21. jun';
+      } else {
+        // Summer -> Winter: days getting shorter
+        const summerSun = calculateSunTimes(solstices.summer, METNO_LAT, METNO_LON);
+        const sinceSolstice = todaySun.dayLength - summerSun.dayLength;
+        const daysSince = Math.floor((today - solstices.summer) / 86400000);
+        const daysTo = Math.floor((solstices.winter - today) / 86400000);
+        
+        document.getElementById('sinceSolsticeLabel').textContent = 'Siden sommersolverv';
+        document.getElementById('sinceSolstice').textContent = formatChange(sinceSolstice);
+        document.getElementById('sinceSolstice').className = 'stat-value trend-down';
+        document.getElementById('sinceSolsticeDays').textContent = `${daysSince} dager`;
+        
+        document.getElementById('toSolsticeLabel').textContent = 'Til vintersolverv';
+        document.getElementById('toSolstice').textContent = `${daysTo} dager`;
+        document.getElementById('toSolsticeDate').textContent = '21. des';
+      }
     }
     
     const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
@@ -1269,8 +1467,9 @@
           const d = latest[0];
           document.getElementById('temp').textContent = fmt(d.temperature);
           document.getElementById('irr').textContent = fmt(d.irradiance, 0);
-          // v1.10.5: Lux direct from sensor
-          document.getElementById('lux').textContent = (d.lux || 0) > 0 ? fmt(d.lux, 0) + ' lx' : '0 lx';
+          // v1.10.4: Lux from weather_data (approx 120 lux per W/m²)
+          const luxValue = (d.irradiance || 0) * 120;
+          document.getElementById('lux').textContent = luxValue > 0 ? fmt(luxValue, 0) + ' lx' : '0 lx';
           document.getElementById('rainToday').textContent = fmt(d.rain_today);
           document.getElementById('hum').textContent = fmt(d.humidity, 0);
           document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
@@ -1508,6 +1707,7 @@
     updateWaterLevels();
     updatePoliceLog();
     updateSolarData();
+    updateDaylightCard();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
@@ -1515,6 +1715,7 @@
     setInterval(updateWaterLevels, 3600000);   // Water levels every hour
     setInterval(updatePoliceLog, 300000);      // Police log every 5 minutes
     setInterval(updateSolarData, 60000);       // Solar data every minute
+    setInterval(updateDaylightCard, 3600000);  // Daylight data every hour
   </script>
 </body>
 </html>
