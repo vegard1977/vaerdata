@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.6 -->
+<!-- Værdata Siljan v1.10.7 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -55,7 +55,14 @@
     .card.solar { border-left: 3px solid #fbbf24; }
     .card.calculator { border-left: 3px solid #a855f7; }
     .card.daylight { border-left: 3px solid #f59e0b; }
+    .card.comfort { border-left: 3px solid #14b8a6; }
+    .card.moon { border-left: 3px solid #a78bfa; }
+    .card.records { border-left: 3px solid #f43f5e; }
     .sun-times { font-size: 0.9rem; color: #fbbf24; margin-top: 5px; }
+    .moon-phase { font-size: 2.5rem; display: inline-block; }
+    .comfort-good { color: #4ade80; }
+    .comfort-ok { color: #fbbf24; }
+    .comfort-bad { color: #f87171; }
     .card.alert { border-left: 3px solid #22c55e; }
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
@@ -225,6 +232,107 @@
       </div>
     </div>
 
+    <!-- Vind -->
+    <div class="card">
+      <h2>💨 Vind</h2>
+      <span class="value" id="wind">--</span><span class="unit">m/s</span>
+      <div class="beaufort" id="beaufort">--</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Maks 24t</div>
+          <div class="stat-value" id="wind24max">--</div>
+          <div class="stat-detail" id="wind24time">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 7d</div>
+          <div class="stat-value" id="wind7max">--</div>
+          <div class="stat-detail" id="wind7time">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 30d</div>
+          <div class="stat-value" id="wind30max">--</div>
+          <div class="stat-detail" id="wind30time">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Føles som / Komfort -->
+    <div class="card comfort">
+      <h2>🌡️ Føles som</h2>
+      <span class="value" id="feelsLike">--</span><span class="unit">°C</span>
+      <div class="beaufort" id="comfortLevel">--</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Faktisk temp</div>
+          <div class="stat-value" id="actualTemp">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label" id="chillHeatLabel">Wind chill</div>
+          <div class="stat-value" id="chillHeatValue">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Vind</div>
+          <div class="stat-value" id="comfortWind">--</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Komfortindeks</div>
+          <div class="stat-value" id="comfortIndex">--</div>
+          <div class="stat-detail" id="comfortDesc">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Anbefaling</div>
+          <div class="stat-value" id="comfortAdviceIcon">--</div>
+          <div class="stat-detail" id="comfortAdvice">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Temperatur-statistikk -->
+    <div class="card records">
+      <h2>📈 Temperatur-statistikk</h2>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Kaldeste 7d</div>
+          <div class="stat-value" id="coldest7">--</div>
+          <div class="stat-detail" id="coldest7date">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Varmeste 7d</div>
+          <div class="stat-value" id="warmest7">--</div>
+          <div class="stat-detail" id="warmest7date">--</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Frostdager</div>
+          <div class="stat-value" id="frostDays">--</div>
+          <div class="stat-detail">siste 30d</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Kuldegrader</div>
+          <div class="stat-value" id="coldDegrees">--</div>
+          <div class="stat-detail">sum 30d</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Varmegrader</div>
+          <div class="stat-value" id="warmDegrees">--</div>
+          <div class="stat-detail">sum 30d</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Snitt 7d</div>
+          <div class="stat-value" id="tempAvg7">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Snitt 30d</div>
+          <div class="stat-value" id="tempAvg30">--</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Irradiance -->
     <div class="card">
       <h2>☀️ Solinnstråling</h2>
@@ -303,26 +411,35 @@
       </div>
     </div>
 
-    <!-- Vind -->
-    <div class="card">
-      <h2>💨 Vind</h2>
-      <span class="value" id="wind">--</span><span class="unit">m/s</span>
-      <div class="beaufort" id="beaufort">--</div>
+    <!-- Måne & Astro -->
+    <div class="card moon">
+      <h2>🌙 Måne & Astro</h2>
+      <span class="moon-phase" id="moonIcon">🌑</span>
+      <div class="beaufort" id="moonPhase">--</div>
       <div class="stats">
         <div class="stat">
-          <div class="stat-label">Maks 24t</div>
-          <div class="stat-value" id="wind24max">--</div>
-          <div class="stat-detail" id="wind24time">--</div>
+          <div class="stat-label">Belysning</div>
+          <div class="stat-value" id="moonIllum">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Maks 7d</div>
-          <div class="stat-value" id="wind7max">--</div>
-          <div class="stat-detail" id="wind7time">--</div>
+          <div class="stat-label">Måneoppgang</div>
+          <div class="stat-value" id="moonRise">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Maks 30d</div>
-          <div class="stat-value" id="wind30max">--</div>
-          <div class="stat-detail" id="wind30time">--</div>
+          <div class="stat-label">Månenedgang</div>
+          <div class="stat-value" id="moonSet">--</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Neste fullmåne</div>
+          <div class="stat-value" id="nextFull">--</div>
+          <div class="stat-detail" id="nextFullDays">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Neste nymåne</div>
+          <div class="stat-value" id="nextNew">--</div>
+          <div class="stat-detail" id="nextNewDays">--</div>
         </div>
       </div>
     </div>
@@ -703,6 +820,7 @@
     //   v1.10.4 - Lux calculated from weather_data irradiance (updates every minute)
     //   v1.10.5 - Lux direct from sensor in weather_data
     //   v1.10.6 - Added daylight card with sunrise/sunset and solstice tracking
+    //   v1.10.7 - Added feels like/comfort, temp stats, and moon cards; reorganized card order
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -908,6 +1026,242 @@
         document.getElementById('toSolsticeLabel').textContent = 'Til vintersolverv';
         document.getElementById('toSolstice').textContent = `${daysTo} dager`;
         document.getElementById('toSolsticeDate').textContent = '21. des';
+      }
+    }
+
+    // v1.10.7: Wind chill calculation (for temp < 10°C and wind > 4.8 km/h)
+    function calculateWindChill(tempC, windKmh) {
+      if (tempC > 10 || windKmh < 4.8) return tempC;
+      const wc = 13.12 + 0.6215 * tempC - 11.37 * Math.pow(windKmh, 0.16) + 0.3965 * tempC * Math.pow(windKmh, 0.16);
+      return Math.round(wc * 10) / 10;
+    }
+
+    // v1.10.7: Heat index calculation (for temp > 27°C)
+    function calculateHeatIndex(tempC, humidity) {
+      if (tempC < 27) return tempC;
+      const c1 = -8.784695, c2 = 1.61139411, c3 = 2.338549;
+      const c4 = -0.14611605, c5 = -0.012308094, c6 = -0.016424828;
+      const c7 = 0.002211732, c8 = 0.00072546, c9 = -0.000003582;
+      const hi = c1 + c2*tempC + c3*humidity + c4*tempC*humidity + 
+                 c5*tempC*tempC + c6*humidity*humidity + 
+                 c7*tempC*tempC*humidity + c8*tempC*humidity*humidity + 
+                 c9*tempC*tempC*humidity*humidity;
+      return Math.round(hi * 10) / 10;
+    }
+
+    // v1.10.7: Comfort index (0-100, higher is better)
+    function calculateComfortIndex(tempC, humidity, windMs) {
+      // Ideal: 20°C, 50% humidity, light breeze
+      let score = 100;
+      
+      // Temperature penalty
+      const tempDiff = Math.abs(tempC - 20);
+      score -= tempDiff * 3;
+      
+      // Humidity penalty (uncomfortable below 30% or above 70%)
+      if (humidity < 30) score -= (30 - humidity);
+      if (humidity > 70) score -= (humidity - 70);
+      
+      // Wind penalty (uncomfortable above 10 m/s)
+      if (windMs > 10) score -= (windMs - 10) * 3;
+      
+      // Cold + wind penalty
+      if (tempC < 5 && windMs > 3) score -= 10;
+      
+      // Hot + humid penalty
+      if (tempC > 25 && humidity > 60) score -= 10;
+      
+      return Math.max(0, Math.min(100, Math.round(score)));
+    }
+
+    // v1.10.7: Get comfort description and class
+    function getComfortInfo(score) {
+      if (score >= 80) return { desc: 'Behagelig', class: 'comfort-good', icon: '😊', advice: 'Nyt været!' };
+      if (score >= 60) return { desc: 'Greit', class: 'comfort-ok', icon: '🙂', advice: 'Fint ute' };
+      if (score >= 40) return { desc: 'Ubehagelig', class: 'comfort-ok', icon: '😐', advice: 'Kle deg godt' };
+      if (score >= 20) return { desc: 'Kaldt/varmt', class: 'comfort-bad', icon: '😕', advice: 'Begrens tid ute' };
+      return { desc: 'Ekstremt', class: 'comfort-bad', icon: '🥶', advice: 'Hold deg inne' };
+    }
+
+    // v1.10.7: Get clothing recommendation
+    function getClothingAdvice(tempC, windMs, rain) {
+      if (tempC < -10) return { icon: '🧥🧤🧣', text: 'Varm jakke, votter, skjerf' };
+      if (tempC < 0) return { icon: '🧤🧣', text: 'Votter og skjerf' };
+      if (tempC < 10) return { icon: '🧥', text: 'Jakke anbefales' };
+      if (tempC < 15) return { icon: '🧥', text: 'Lett jakke' };
+      if (tempC > 25) return { icon: '🕶️💧', text: 'Solbriller, drikk vann' };
+      return { icon: '👍', text: 'Behagelig' };
+    }
+
+    // v1.10.7: Moon phase calculation
+    function getMoonPhase(date) {
+      // Known new moon: Jan 6, 2000
+      const knownNew = new Date(2000, 0, 6, 18, 14);
+      const lunarCycle = 29.53058867; // days
+      const daysSince = (date - knownNew) / 86400000;
+      const phase = ((daysSince % lunarCycle) + lunarCycle) % lunarCycle;
+      const illumination = Math.round((1 - Math.cos(2 * Math.PI * phase / lunarCycle)) / 2 * 100);
+      
+      let name, icon;
+      if (phase < 1.85) { name = 'Nymåne'; icon = '🌑'; }
+      else if (phase < 7.38) { name = 'Voksende månesigd'; icon = '🌒'; }
+      else if (phase < 9.23) { name = 'Første kvarter'; icon = '🌓'; }
+      else if (phase < 14.76) { name = 'Voksende fullmåne'; icon = '🌔'; }
+      else if (phase < 16.61) { name = 'Fullmåne'; icon = '🌕'; }
+      else if (phase < 22.14) { name = 'Minkende fullmåne'; icon = '🌖'; }
+      else if (phase < 23.99) { name = 'Siste kvarter'; icon = '🌗'; }
+      else { name = 'Minkende månesigd'; icon = '🌘'; }
+      
+      return { phase, illumination, name, icon };
+    }
+
+    // v1.10.7: Calculate next full/new moon
+    function getNextMoonPhases(date) {
+      const lunarCycle = 29.53058867;
+      const knownNew = new Date(2000, 0, 6, 18, 14);
+      const daysSince = (date - knownNew) / 86400000;
+      const currentPhase = ((daysSince % lunarCycle) + lunarCycle) % lunarCycle;
+      
+      // Days until next new moon (phase = 0)
+      const daysToNew = lunarCycle - currentPhase;
+      const nextNew = new Date(date.getTime() + daysToNew * 86400000);
+      
+      // Days until next full moon (phase = ~14.76)
+      let daysToFull = (lunarCycle / 2) - currentPhase;
+      if (daysToFull < 0) daysToFull += lunarCycle;
+      const nextFull = new Date(date.getTime() + daysToFull * 86400000);
+      
+      return { 
+        nextNew: { date: nextNew, days: Math.round(daysToNew) },
+        nextFull: { date: nextFull, days: Math.round(daysToFull) }
+      };
+    }
+
+    // v1.10.7: Update feels like card
+    let currentTemp = null, currentWind = null, currentHumidity = null;
+    function updateFeelsLikeCard() {
+      if (currentTemp === null) return;
+      
+      const windKmh = currentWind * 3.6; // m/s to km/h
+      const windChill = calculateWindChill(currentTemp, windKmh);
+      const heatIndex = calculateHeatIndex(currentTemp, currentHumidity);
+      
+      const feelsLike = currentTemp < 10 ? windChill : (currentTemp > 27 ? heatIndex : currentTemp);
+      const diff = feelsLike - currentTemp;
+      
+      const feelsLikeEl = document.getElementById('feelsLike');
+      feelsLikeEl.textContent = fmt(feelsLike, 0);
+      feelsLikeEl.className = 'value ' + getTempClass(feelsLike);
+      
+      const comfortScore = calculateComfortIndex(currentTemp, currentHumidity, currentWind);
+      const comfortInfo = getComfortInfo(comfortScore);
+      const clothing = getClothingAdvice(currentTemp, currentWind, 0);
+      
+      const comfortLevelEl = document.getElementById('comfortLevel');
+      comfortLevelEl.textContent = comfortInfo.desc;
+      comfortLevelEl.className = 'beaufort ' + comfortInfo.class;
+      
+      document.getElementById('actualTemp').innerHTML = fmtTempColored(currentTemp);
+      
+      const labelEl = document.getElementById('chillHeatLabel');
+      const valueEl = document.getElementById('chillHeatValue');
+      if (currentTemp < 10) {
+        labelEl.textContent = 'Wind chill';
+        valueEl.textContent = (diff < 0 ? '' : '+') + fmt(diff, 0) + '°C';
+      } else if (currentTemp > 27) {
+        labelEl.textContent = 'Heat index';
+        valueEl.textContent = (diff > 0 ? '+' : '') + fmt(diff, 0) + '°C';
+      } else {
+        labelEl.textContent = 'Effekt';
+        valueEl.textContent = '0°C';
+      }
+      
+      document.getElementById('comfortWind').textContent = fmt(currentWind, 1) + ' m/s';
+      
+      const indexEl = document.getElementById('comfortIndex');
+      indexEl.textContent = comfortScore + '/100';
+      indexEl.className = 'stat-value ' + comfortInfo.class;
+      document.getElementById('comfortDesc').textContent = comfortInfo.desc;
+      
+      document.getElementById('comfortAdviceIcon').textContent = clothing.icon;
+      document.getElementById('comfortAdvice').textContent = clothing.text;
+    }
+
+    // v1.10.7: Update moon card
+    function updateMoonCard() {
+      const today = new Date();
+      const moon = getMoonPhase(today);
+      const nextPhases = getNextMoonPhases(today);
+      
+      document.getElementById('moonIcon').textContent = moon.icon;
+      document.getElementById('moonPhase').textContent = moon.name;
+      document.getElementById('moonIllum').textContent = moon.illumination + '%';
+      
+      // Approximate moon rise/set (varies a lot, this is simplified)
+      const moonRiseHour = 12 + (moon.phase / 29.53 * 24);
+      const moonSetHour = moonRiseHour + 12;
+      document.getElementById('moonRise').textContent = formatHourToTime(moonRiseHour % 24);
+      document.getElementById('moonSet').textContent = formatHourToTime(moonSetHour % 24);
+      
+      const fullDate = nextPhases.nextFull.date;
+      const newDate = nextPhases.nextNew.date;
+      document.getElementById('nextFull').textContent = fmtDayMonth(fullDate.toISOString());
+      document.getElementById('nextFullDays').textContent = nextPhases.nextFull.days + ' dager';
+      document.getElementById('nextNew').textContent = fmtDayMonth(newDate.toISOString());
+      document.getElementById('nextNewDays').textContent = nextPhases.nextNew.days + ' dager';
+    }
+
+    // v1.10.7: Update temperature statistics card (called from updateDashboard)
+    function updateTempStatsCard(data7d, data30d) {
+      if (data7d && data7d.length > 0) {
+        const temps7 = data7d.map(d => d.temperature).filter(t => t !== null);
+        const temp7 = findMinMax(data7d, 'temperature');
+        
+        const coldest7El = document.getElementById('coldest7');
+        coldest7El.innerHTML = fmtTempColored(temp7.min.val);
+        document.getElementById('coldest7date').textContent = fmtShortDate(temp7.min.time);
+        
+        const warmest7El = document.getElementById('warmest7');
+        warmest7El.innerHTML = fmtTempColored(temp7.max.val);
+        document.getElementById('warmest7date').textContent = fmtShortDate(temp7.max.time);
+        
+        const avg7 = temps7.reduce((a, b) => a + b, 0) / temps7.length;
+        document.getElementById('tempAvg7').innerHTML = fmtTempColored(avg7);
+      }
+      
+      if (data30d && data30d.length > 0) {
+        const temps30 = data30d.map(d => d.temperature).filter(t => t !== null);
+        const avg30 = temps30.reduce((a, b) => a + b, 0) / temps30.length;
+        document.getElementById('tempAvg30').innerHTML = fmtTempColored(avg30);
+        
+        // Count frost days and calculate degree-days
+        const dailyTemps = {};
+        for (const d of data30d) {
+          const dateKey = getDateKey(d.recorded_at);
+          if (!dailyTemps[dateKey]) dailyTemps[dateKey] = [];
+          if (d.temperature !== null) dailyTemps[dateKey].push(d.temperature);
+        }
+        
+        let frostDays = 0, coldDegrees = 0, warmDegrees = 0;
+        for (const day of Object.keys(dailyTemps)) {
+          const temps = dailyTemps[day];
+          const min = Math.min(...temps);
+          const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
+          
+          if (min < 0) frostDays++;
+          if (avg < 0) coldDegrees += Math.abs(avg);
+          if (avg > 0) warmDegrees += avg;
+        }
+        
+        document.getElementById('frostDays').textContent = frostDays;
+        
+        const coldEl = document.getElementById('coldDegrees');
+        coldEl.textContent = '-' + fmt(coldDegrees, 0) + '°';
+        coldEl.className = 'stat-value temp-cold';
+        
+        const warmEl = document.getElementById('warmDegrees');
+        warmEl.textContent = '+' + fmt(warmDegrees, 0) + '°';
+        warmEl.className = 'stat-value temp-warm';
       }
     }
     
@@ -1509,6 +1863,12 @@
           const siljanBeaufortEl = document.getElementById('siljanWindBeaufort');
           siljanBeaufortEl.textContent = siljanBeaufort.name;
           siljanBeaufortEl.className = 'beaufort ' + siljanBeaufort.class;
+
+          // v1.10.7: Store values for feels like card
+          currentTemp = d.temperature;
+          currentWind = windSpeed;
+          currentHumidity = d.humidity;
+          updateFeelsLikeCard();
         }
 
         const data24h = await fetchData('weather_data', '*', `recorded_at=gte.${hoursAgo(24)}`);
@@ -1696,6 +2056,11 @@
           document.getElementById('rainAvgPerDay').textContent = fmt(stats30.avgPerRainDay) + ' mm';
         }
 
+        // v1.10.7: Update temperature statistics card
+        const data7dForStats = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(7)}`);
+        const data30dForStats = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(30)}`);
+        updateTempStatsCard(data7dForStats, data30dForStats);
+
       } catch (err) {
         console.error('Feil ved henting av data:', err);
       }
@@ -1708,6 +2073,7 @@
     updatePoliceLog();
     updateSolarData();
     updateDaylightCard();
+    updateMoonCard();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
