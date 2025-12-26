@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.7 -->
+<!-- Værdata Siljan v1.10.8 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -58,7 +58,12 @@
     .card.comfort { border-left: 3px solid #14b8a6; }
     .card.moon { border-left: 3px solid #a78bfa; }
     .card.records { border-left: 3px solid #f43f5e; }
+    .card.aurora { border-left: 3px solid #22d3ee; }
     .sun-times { font-size: 0.9rem; color: #fbbf24; margin-top: 5px; }
+    .aurora-low { color: #4ade80; }
+    .aurora-moderate { color: #fbbf24; }
+    .aurora-high { color: #f97316; }
+    .aurora-storm { color: #ef4444; }
     .moon-phase { font-size: 2.5rem; display: inline-block; }
     .comfort-good { color: #4ade80; }
     .comfort-ok { color: #fbbf24; }
@@ -622,6 +627,41 @@
         </div>
       </div>
     </div>
+
+    <!-- Nordlys -->
+    <div class="card aurora metno">
+      <h2>🌌 Nordlys</h2>
+      <span class="value" id="kpIndex">--</span>
+      <div class="beaufort" id="auroraLevel">--</div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Synlighet Siljan</div>
+          <div class="stat-value" id="auroraProb">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Maks 24t</div>
+          <div class="stat-value" id="kpMax24">--</div>
+          <div class="stat-detail" id="kpMax24time">--</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Skydekke</div>
+          <div class="stat-value" id="auroraClouds">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Månelys</div>
+          <div class="stat-value" id="auroraMoon">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Mørketid</div>
+          <div class="stat-value" id="auroraDark">--</div>
+        </div>
+      </div>
+      <div class="updated" style="margin-top: 10px; margin-bottom: 0;">
+        Kilde: <a href="https://www.swpc.noaa.gov/" target="_blank" style="color: #888;">NOAA Space Weather</a>
+      </div>
+    </div>
   </div>
 
   <div class="section-title">📍 Siljan regionalt</div>
@@ -821,6 +861,7 @@
     //   v1.10.5 - Lux direct from sensor in weather_data
     //   v1.10.6 - Added daylight card with sunrise/sunset and solstice tracking
     //   v1.10.7 - Added feels like/comfort, temp stats, and moon cards; reorganized card order
+    //   v1.10.8 - Added aurora/northern lights card with NOAA Kp index
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1262,6 +1303,115 @@
         const warmEl = document.getElementById('warmDegrees');
         warmEl.textContent = '+' + fmt(warmDegrees, 0) + '°';
         warmEl.className = 'stat-value temp-warm';
+      }
+    }
+
+    // v1.10.8: Aurora/Northern Lights functions
+    function getAuroraLevel(kp) {
+      if (kp >= 7) return { name: 'Sterk storm', class: 'aurora-storm', prob: 95 };
+      if (kp >= 6) return { name: 'Storm', class: 'aurora-storm', prob: 85 };
+      if (kp >= 5) return { name: 'Høy aktivitet', class: 'aurora-high', prob: 70 };
+      if (kp >= 4) return { name: 'Moderat aktivitet', class: 'aurora-moderate', prob: 45 };
+      if (kp >= 3) return { name: 'Lav aktivitet', class: 'aurora-low', prob: 20 };
+      if (kp >= 2) return { name: 'Svak aktivitet', class: 'aurora-low', prob: 5 };
+      return { name: 'Ingen aktivitet', class: 'aurora-low', prob: 0 };
+    }
+
+    // Probability adjustment for latitude (Siljan ~59.3°N)
+    function getAuroraProbability(kp, cloudCover, moonIllum) {
+      const level = getAuroraLevel(kp);
+      let prob = level.prob;
+      
+      // Reduce for clouds (50% clouds = 50% reduction)
+      prob *= (1 - cloudCover / 100 * 0.8);
+      
+      // Reduce for moonlight (full moon = 30% reduction)
+      prob *= (1 - moonIllum / 100 * 0.3);
+      
+      return Math.round(Math.max(0, prob));
+    }
+
+    // Check if it's dark enough for aurora viewing
+    function isDarkEnough() {
+      const now = new Date();
+      const hour = now.getHours();
+      // In Norway winter: dark from ~16:00 to ~09:00
+      // Summer: barely dark at all
+      const month = now.getMonth();
+      
+      if (month >= 4 && month <= 7) {
+        // May-August: very limited darkness
+        return hour >= 23 || hour < 2 ? 'Kort' : 'Nei';
+      } else if (month >= 10 || month <= 1) {
+        // Nov-Feb: long darkness
+        return (hour >= 16 || hour < 9) ? 'Ja' : 'Nei';
+      } else {
+        // Spring/fall
+        return (hour >= 19 || hour < 6) ? 'Ja' : 'Nei';
+      }
+    }
+
+    async function updateAuroraCard() {
+      try {
+        // Fetch NOAA Kp index
+        const response = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+        const data = await response.json();
+        
+        if (data && data.length > 1) {
+          // Skip header row, get latest readings
+          const readings = data.slice(1);
+          const latest = readings[readings.length - 1];
+          const kp = parseFloat(latest[1]) || 0;
+          
+          // Display current Kp
+          document.getElementById('kpIndex').textContent = 'Kp ' + kp.toFixed(1);
+          
+          const level = getAuroraLevel(kp);
+          const levelEl = document.getElementById('auroraLevel');
+          levelEl.textContent = level.name;
+          levelEl.className = 'beaufort ' + level.class;
+          
+          // Get moon illumination from our moon function
+          const moon = getMoonPhase(new Date());
+          const moonIllum = moon.illumination;
+          
+          // Get cloud cover from latest weather data (already fetched)
+          const cloudCover = parseFloat(document.getElementById('clouds')?.textContent) || 0;
+          
+          // Calculate probability
+          const prob = getAuroraProbability(kp, cloudCover, moonIllum);
+          const probEl = document.getElementById('auroraProb');
+          probEl.textContent = prob + '%';
+          probEl.className = 'stat-value ' + level.class;
+          
+          // Find max Kp in last 24h (data has 3-hour intervals, so ~8 entries)
+          const last24h = readings.slice(-8);
+          let maxKp = 0;
+          let maxTime = '';
+          for (const r of last24h) {
+            const kpVal = parseFloat(r[1]) || 0;
+            if (kpVal > maxKp) {
+              maxKp = kpVal;
+              maxTime = r[0]; // timestamp
+            }
+          }
+          document.getElementById('kpMax24').textContent = 'Kp ' + maxKp.toFixed(1);
+          if (maxTime) {
+            const maxDate = new Date(maxTime.replace(' ', 'T') + 'Z');
+            document.getElementById('kpMax24time').textContent = fmtTime(maxDate.toISOString());
+          }
+          
+          // Cloud cover and moon
+          document.getElementById('auroraClouds').textContent = cloudCover + '%';
+          document.getElementById('auroraMoon').textContent = moonIllum + '%';
+          
+          // Is it dark enough?
+          document.getElementById('auroraDark').textContent = isDarkEnough();
+        }
+      } catch (err) {
+        console.error('Feil ved henting av nordlysdata:', err);
+        document.getElementById('kpIndex').textContent = '--';
+        document.getElementById('auroraLevel').textContent = 'Utilgjengelig';
       }
     }
     
@@ -2074,6 +2224,7 @@
     updateSolarData();
     updateDaylightCard();
     updateMoonCard();
+    updateAuroraCard();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
@@ -2082,6 +2233,7 @@
     setInterval(updatePoliceLog, 300000);      // Police log every 5 minutes
     setInterval(updateSolarData, 60000);       // Solar data every minute
     setInterval(updateDaylightCard, 3600000);  // Daylight data every hour
+    setInterval(updateAuroraCard, 900000);     // Aurora data every 15 minutes
   </script>
 </body>
 </html>
