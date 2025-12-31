@@ -166,6 +166,11 @@
       border-radius: 2px;
       transition: width 0.3s;
     }
+    .water-item .water-energy {
+      font-size: 0.75rem;
+      color: #fbbf24;
+      margin-top: 6px;
+    }
     
     /* Police log styles */
     .police-list { margin-top: 10px; }
@@ -771,35 +776,6 @@
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
-      </div>
-      <div class="stats" style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
-        <div class="stat">
-          <div class="stat-label">⚡ Toklev</div>
-          <div class="stat-value" id="energyToklev">--</div>
-          <div class="stat-detail">GWh</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">⚡ Hogstad</div>
-          <div class="stat-value" id="energyHogstad">--</div>
-          <div class="stat-detail">GWh</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">⚡ Kiste</div>
-          <div class="stat-value" id="energyKiste">--</div>
-          <div class="stat-detail">GWh</div>
-        </div>
-      </div>
-      <div class="stats-2" style="margin-top: 10px;">
-        <div class="stat">
-          <div class="stat-label">Total lagret energi</div>
-          <div class="stat-value sun" id="energyTotal">--</div>
-          <div class="stat-detail">GWh</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Årlig produksjon</div>
-          <div class="stat-value">82</div>
-          <div class="stat-detail">GWh</div>
-        </div>
       </div>
       <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
         Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" style="color: #888;">Skagerak Kraft</a> · 
@@ -1669,15 +1645,19 @@
     }
 
     // v1.10.9: Calculate stored hydropower energy
-    function calculateStoredEnergy(data) {
-      // Reservoir data: area (km²), fallhøyde (m), kraftverk
+    // v1.10.9: Calculate stored energy for a single reservoir
+    function getReservoirEnergy(reservoir, level, lrv) {
+      // Reservoir data: area (km²), fallhøyde (m)
       const reservoirConfig = {
-        'Ramsvatn':   { area: 1.655, fall: 80.6, kraftverk: 'toklev' },
-        'Mykle':      { area: 6.02,  fall: 80.6, kraftverk: 'toklev' },
-        'Sporevann':  { area: 1.0188, fall: 80.6, kraftverk: 'toklev' },
-        'Vanebuvann': { area: 0.4114, fall: 135.5, kraftverk: 'hogstad' },
-        'Gorningen':  { area: 2.27,  fall: 46.0, kraftverk: 'kiste' }
+        'Ramsvatn':   { area: 1.655, fall: 80.6 },
+        'Mykle':      { area: 6.02,  fall: 80.6 },
+        'Sporevann':  { area: 1.0188, fall: 80.6 },
+        'Vanebuvann': { area: 0.4114, fall: 135.5 },
+        'Gorningen':  { area: 2.27,  fall: 46.0 }
       };
+      
+      const config = reservoirConfig[reservoir];
+      if (!config) return null;
       
       // Constants
       const rho = 1000;      // kg/m³ (vann)
@@ -1685,29 +1665,11 @@
       const eta = 0.88;      // virkningsgrad
       const toGWh = 3.6e9;   // J to GWh conversion
       
-      let energyToklev = 0;
-      let energyHogstad = 0;
-      let energyKiste = 0;
+      const availableHeight = Math.max(0, level - lrv);
+      const volume = config.area * 1e6 * availableHeight; // m³
+      const energy = (rho * g * volume * config.fall * eta) / toGWh; // GWh
       
-      for (const [name, config] of Object.entries(reservoirConfig)) {
-        const resData = data[name];
-        if (!resData) continue;
-        
-        const availableHeight = Math.max(0, resData.level - resData.lrv);
-        const volume = config.area * 1e6 * availableHeight; // m³
-        const energy = (rho * g * volume * config.fall * eta) / toGWh; // GWh
-        
-        if (config.kraftverk === 'toklev') energyToklev += energy;
-        else if (config.kraftverk === 'hogstad') energyHogstad += energy;
-        else if (config.kraftverk === 'kiste') energyKiste += energy;
-      }
-      
-      const total = energyToklev + energyHogstad + energyKiste;
-      
-      document.getElementById('energyToklev').textContent = fmt(energyToklev, 2);
-      document.getElementById('energyHogstad').textContent = fmt(energyHogstad, 2);
-      document.getElementById('energyKiste').textContent = fmt(energyKiste, 2);
-      document.getElementById('energyTotal').textContent = fmt(total, 2);
+      return energy;
     }
 
     function daysAgoISO(d) {
@@ -1813,9 +1775,6 @@
         let latestUpdate = null;
         waterAlerts = []; // Reset water alerts
         
-        // v1.10.9: Store levels for energy calculation
-        const reservoirData = {};
-        
         for (const reservoir of reservoirs) {
           // Get latest measurement
           const data = await fetchData(
@@ -1847,8 +1806,9 @@
             const fillStyle = getFillColor(fillPct);
             const barWidth = Math.min(Math.max(fillPct || 0, 0), 120);
             
-            // v1.10.9: Store for energy calculation
-            reservoirData[reservoir] = { level, lrv, hrv };
+            // v1.10.9: Calculate energy for this reservoir
+            const energy = getReservoirEnergy(reservoir, level, lrv);
+            const energyStr = energy !== null ? fmt(energy, 2) + ' GWh' : '--';
             
             // Calculate trend
             const oldLevel = oldData.length > 0 ? oldData[0].water_level : null;
@@ -1877,6 +1837,7 @@
               <div class="fill-bar">
                 <div class="fill-bar-inner" style="width: ${barWidth}%; background: ${fillStyle.color};"></div>
               </div>
+              <div class="water-energy">⚡ ${energyStr}</div>
             `;
           } else {
             item.innerHTML = `
@@ -1885,6 +1846,7 @@
               <div class="water-ref">Ingen data</div>
               <div class="fill-pct">--%</div>
               <div class="fill-bar"><div class="fill-bar-inner" style="width: 0%;"></div></div>
+              <div class="water-energy">⚡ --</div>
             `;
           }
           
@@ -1892,9 +1854,6 @@
         }
         
         document.getElementById('waterUpdate').textContent = latestUpdate ? fmtDateTime(latestUpdate) : '--';
-        
-        // v1.10.9: Calculate stored energy
-        calculateStoredEnergy(reservoirData);
         
         // Update combined alert display
         updateAlertDisplay();
