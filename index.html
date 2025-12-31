@@ -1,9 +1,7 @@
-<!-- Værdata Siljan v1.10.8 -->
+<!-- Værdata Siljan v1.10.9 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <script data-goatcounter="https://vega77.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Værdata Siljan</title>
@@ -357,6 +355,16 @@
         <div class="stat">
           <div class="stat-label">Solskinn 24t</div>
           <div class="stat-value sun" id="sun24">--</div>
+        </div>
+      </div>
+      <div class="stats-2">
+        <div class="stat">
+          <div class="stat-label">Solhøyde</div>
+          <div class="stat-value sun" id="sunAltitude">--</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Sol-azimut</div>
+          <div class="stat-value sun" id="sunAzimuth">--</div>
         </div>
       </div>
     </div>
@@ -764,6 +772,35 @@
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
       </div>
+      <div class="stats" style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+        <div class="stat">
+          <div class="stat-label">⚡ Toklev</div>
+          <div class="stat-value" id="energyToklev">--</div>
+          <div class="stat-detail">GWh</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">⚡ Hogstad</div>
+          <div class="stat-value" id="energyHogstad">--</div>
+          <div class="stat-detail">GWh</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">⚡ Kiste</div>
+          <div class="stat-value" id="energyKiste">--</div>
+          <div class="stat-detail">GWh</div>
+        </div>
+      </div>
+      <div class="stats-2" style="margin-top: 10px;">
+        <div class="stat">
+          <div class="stat-label">Total lagret energi</div>
+          <div class="stat-value sun" id="energyTotal">--</div>
+          <div class="stat-detail">GWh</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Årlig produksjon</div>
+          <div class="stat-value">82</div>
+          <div class="stat-detail">GWh</div>
+        </div>
+      </div>
       <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
         Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" style="color: #888;">Skagerak Kraft</a> · 
         Fyllingsgrad: LRV = 0%, HRV = 100% · 
@@ -864,6 +901,7 @@
     //   v1.10.6 - Added daylight card with sunrise/sunset and solstice tracking
     //   v1.10.7 - Added feels like/comfort, temp stats, and moon cards; reorganized card order
     //   v1.10.8 - Added aurora/northern lights card with NOAA Kp index
+    //   v1.10.9 - Norwegian comfort scale, sun position in irradiance card, stored energy in water levels
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1072,6 +1110,22 @@
       }
     }
 
+    // v1.10.9: Update sun position in solinnstråling card
+    function updateSunPosition() {
+      const sun = getSunPosition(new Date(), METNO_LAT, METNO_LON);
+      const altEl = document.getElementById('sunAltitude');
+      const azEl = document.getElementById('sunAzimuth');
+      
+      if (sun.altitude > 0) {
+        altEl.textContent = fmt(sun.altitude, 1) + '°';
+        azEl.textContent = fmt(sun.azimuth, 0) + '°';
+      } else {
+        altEl.textContent = 'Under horisont';
+        azEl.textContent = fmt(sun.azimuth, 0) + '°';
+        altEl.className = 'stat-value';
+      }
+    }
+
     // v1.10.7: Wind chill calculation (for temp < 10°C and wind > 4.8 km/h)
     function calculateWindChill(tempC, windKmh) {
       if (tempC > 10 || windKmh < 4.8) return tempC;
@@ -1093,47 +1147,54 @@
     }
 
     // v1.10.7: Comfort index (0-100, higher is better)
+    // v1.10.9: Norwegian comfort index (adjusted for Nordic climate)
     function calculateComfortIndex(tempC, humidity, windMs) {
-      // Ideal: 20°C, 50% humidity, light breeze
+      // Norwegian scale - ideal around 15°C, tolerant to cold
       let score = 100;
       
-      // Temperature penalty
-      const tempDiff = Math.abs(tempC - 20);
-      score -= tempDiff * 3;
+      // Temperature-based score (Nordic adjusted)
+      if (tempC > 30) score = 30 - (tempC - 30) * 2;
+      else if (tempC > 25) score = 50 - (tempC - 25) * 4;
+      else if (tempC >= 15) score = 90 + (tempC - 20) * 2; // 80-100
+      else if (tempC >= 5) score = 75 + (tempC - 5) * 1.5; // 75-90
+      else if (tempC >= -5) score = 55 + (tempC + 5) * 2; // 55-75
+      else if (tempC >= -15) score = 40 + (tempC + 15) * 1.5; // 40-55
+      else if (tempC >= -25) score = 25 + (tempC + 25) * 1.5; // 25-40
+      else score = Math.max(0, 25 + (tempC + 25) * 1); // 0-25
       
-      // Humidity penalty (uncomfortable below 30% or above 70%)
-      if (humidity < 30) score -= (30 - humidity);
-      if (humidity > 70) score -= (humidity - 70);
+      // Wind chill penalty (more significant in cold)
+      if (tempC < 5 && windMs > 3) {
+        score -= windMs * 1.5;
+      }
       
-      // Wind penalty (uncomfortable above 10 m/s)
-      if (windMs > 10) score -= (windMs - 10) * 3;
-      
-      // Cold + wind penalty
-      if (tempC < 5 && windMs > 3) score -= 10;
-      
-      // Hot + humid penalty
-      if (tempC > 25 && humidity > 60) score -= 10;
+      // Humidity discomfort (mainly when hot)
+      if (tempC > 20 && humidity > 70) {
+        score -= (humidity - 70) * 0.5;
+      }
       
       return Math.max(0, Math.min(100, Math.round(score)));
     }
 
-    // v1.10.7: Get comfort description and class
+    // v1.10.9: Norwegian comfort descriptions
     function getComfortInfo(score) {
       if (score >= 80) return { desc: 'Behagelig', class: 'comfort-good', icon: '😊', advice: 'Nyt været!' };
-      if (score >= 60) return { desc: 'Greit', class: 'comfort-ok', icon: '🙂', advice: 'Fint ute' };
-      if (score >= 40) return { desc: 'Ubehagelig', class: 'comfort-ok', icon: '😐', advice: 'Kle deg godt' };
-      if (score >= 20) return { desc: 'Kaldt/varmt', class: 'comfort-bad', icon: '😕', advice: 'Begrens tid ute' };
-      return { desc: 'Ekstremt', class: 'comfort-bad', icon: '🥶', advice: 'Hold deg inne' };
+      if (score >= 70) return { desc: 'Fint', class: 'comfort-good', icon: '🙂', advice: 'Fint ute' };
+      if (score >= 55) return { desc: 'Kjølig', class: 'comfort-ok', icon: '😐', advice: 'Lett jakke' };
+      if (score >= 40) return { desc: 'Kaldt', class: 'comfort-ok', icon: '🥶', advice: 'Jakke og lue' };
+      if (score >= 25) return { desc: 'Iskaldt', class: 'comfort-bad', icon: '🥶', advice: 'Kle deg godt' };
+      return { desc: 'Bitende kaldt', class: 'comfort-bad', icon: '⚠️', advice: 'Begrens tid ute' };
     }
 
-    // v1.10.7: Get clothing recommendation
+    // v1.10.9: Norwegian clothing advice
     function getClothingAdvice(tempC, windMs, rain) {
-      if (tempC < -10) return { icon: '🧥🧤🧣', text: 'Varm jakke, votter, skjerf' };
-      if (tempC < 0) return { icon: '🧤🧣', text: 'Votter og skjerf' };
-      if (tempC < 10) return { icon: '🧥', text: 'Jakke anbefales' };
+      if (tempC < -25) return { icon: '⚠️🧥', text: 'Begrens tid ute' };
+      if (tempC < -15) return { icon: '🧥🧤🧣', text: 'Kle deg godt' };
+      if (tempC < -5) return { icon: '🧤🧣', text: 'Kle deg' };
+      if (tempC < 5) return { icon: '🧥🧣', text: 'Jakke og lue' };
       if (tempC < 15) return { icon: '🧥', text: 'Lett jakke' };
-      if (tempC > 25) return { icon: '🕶️💧', text: 'Solbriller, drikk vann' };
-      return { icon: '👍', text: 'Behagelig' };
+      if (tempC > 30) return { icon: '🥵💧', text: 'Hold deg i skyggen' };
+      if (tempC > 25) return { icon: '🕶️💧', text: 'Drikk vann' };
+      return { icon: '👍', text: 'Nyt været!' };
     }
 
     // v1.10.7: Moon phase calculation
@@ -1607,6 +1668,48 @@
       return { arrow: '→', class: 'water-trend-stable' };
     }
 
+    // v1.10.9: Calculate stored hydropower energy
+    function calculateStoredEnergy(data) {
+      // Reservoir data: area (km²), fallhøyde (m), kraftverk
+      const reservoirConfig = {
+        'Ramsvatn':   { area: 1.655, fall: 80.6, kraftverk: 'toklev' },
+        'Mykle':      { area: 6.02,  fall: 80.6, kraftverk: 'toklev' },
+        'Sporevann':  { area: 1.0188, fall: 80.6, kraftverk: 'toklev' },
+        'Vanebuvann': { area: 0.4114, fall: 135.5, kraftverk: 'hogstad' },
+        'Gorningen':  { area: 2.27,  fall: 46.0, kraftverk: 'kiste' }
+      };
+      
+      // Constants
+      const rho = 1000;      // kg/m³ (vann)
+      const g = 9.81;        // m/s²
+      const eta = 0.88;      // virkningsgrad
+      const toGWh = 3.6e9;   // J to GWh conversion
+      
+      let energyToklev = 0;
+      let energyHogstad = 0;
+      let energyKiste = 0;
+      
+      for (const [name, config] of Object.entries(reservoirConfig)) {
+        const resData = data[name];
+        if (!resData) continue;
+        
+        const availableHeight = Math.max(0, resData.level - resData.lrv);
+        const volume = config.area * 1e6 * availableHeight; // m³
+        const energy = (rho * g * volume * config.fall * eta) / toGWh; // GWh
+        
+        if (config.kraftverk === 'toklev') energyToklev += energy;
+        else if (config.kraftverk === 'hogstad') energyHogstad += energy;
+        else if (config.kraftverk === 'kiste') energyKiste += energy;
+      }
+      
+      const total = energyToklev + energyHogstad + energyKiste;
+      
+      document.getElementById('energyToklev').textContent = fmt(energyToklev, 2);
+      document.getElementById('energyHogstad').textContent = fmt(energyHogstad, 2);
+      document.getElementById('energyKiste').textContent = fmt(energyKiste, 2);
+      document.getElementById('energyTotal').textContent = fmt(total, 2);
+    }
+
     function daysAgoISO(d) {
       return new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString();
     }
@@ -1710,6 +1813,9 @@
         let latestUpdate = null;
         waterAlerts = []; // Reset water alerts
         
+        // v1.10.9: Store levels for energy calculation
+        const reservoirData = {};
+        
         for (const reservoir of reservoirs) {
           // Get latest measurement
           const data = await fetchData(
@@ -1740,6 +1846,9 @@
             const fillPct = hrv && lrv ? ((level - lrv) / (hrv - lrv) * 100) : null;
             const fillStyle = getFillColor(fillPct);
             const barWidth = Math.min(Math.max(fillPct || 0, 0), 120);
+            
+            // v1.10.9: Store for energy calculation
+            reservoirData[reservoir] = { level, lrv, hrv };
             
             // Calculate trend
             const oldLevel = oldData.length > 0 ? oldData[0].water_level : null;
@@ -1783,6 +1892,9 @@
         }
         
         document.getElementById('waterUpdate').textContent = latestUpdate ? fmtDateTime(latestUpdate) : '--';
+        
+        // v1.10.9: Calculate stored energy
+        calculateStoredEnergy(reservoirData);
         
         // Update combined alert display
         updateAlertDisplay();
@@ -2227,6 +2339,7 @@
     updateDaylightCard();
     updateMoonCard();
     updateAuroraCard();
+    updateSunPosition();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
@@ -2236,6 +2349,7 @@
     setInterval(updateSolarData, 60000);       // Solar data every minute
     setInterval(updateDaylightCard, 3600000);  // Daylight data every hour
     setInterval(updateAuroraCard, 900000);     // Aurora data every 15 minutes
+    setInterval(updateSunPosition, 60000);     // Sun position every minute
   </script>
 </body>
 </html>
