@@ -1705,27 +1705,38 @@
       return dailyMax;
     }
 
-    function calcRainStats(dailyMax, threshold = 0.2) {
-      const days = Object.keys(dailyMax).sort();
+    function calcRainStats(dailyMax, threshold = 0.2, numDays = 30) {
+      // Generate all dates in the period
+      const allDays = [];
+      for (let i = numDays - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        allDays.push(getDateKey(d.toISOString()));
+      }
+      
       let rainDays = 0;
       let maxDay = { val: 0, date: null };
       let totalRain = 0;
       
-      for (const day of days) {
-        const rain = dailyMax[day].val;
-        if (rain > threshold) {
-          rainDays++;
-          totalRain += rain;
-        }
-        if (rain > maxDay.val) {
-          maxDay = { val: rain, date: dailyMax[day].time };
+      for (const day of allDays) {
+        if (dailyMax[day]) {
+          const rain = dailyMax[day].val;
+          if (rain > threshold) {
+            rainDays++;
+            totalRain += rain;
+          }
+          if (rain > maxDay.val) {
+            maxDay = { val: rain, date: dailyMax[day].time };
+          }
         }
       }
 
+      // Calculate dry streak using all days
       let maxDryStreak = 0;
       let currentDryStreak = 0;
-      for (const day of days) {
-        if (dailyMax[day].val <= threshold) {
+      for (const day of allDays) {
+        const rain = dailyMax[day] ? dailyMax[day].val : 0;
+        if (rain <= threshold) {
           currentDryStreak++;
           maxDryStreak = Math.max(maxDryStreak, currentDryStreak);
         } else {
@@ -2228,7 +2239,7 @@
           const rain7total = Object.values(daily7).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain7').textContent = fmt(rain7total) + ' mm';
 
-          const stats7 = calcRainStats(daily7);
+          const stats7 = calcRainStats(daily7, 0.2, 7);
           document.getElementById('rainMax7').textContent = fmt(stats7.maxDay.val) + ' mm';
           document.getElementById('rainMax7date').textContent = fmtDayMonth(stats7.maxDay.date);
           document.getElementById('rainDays7').textContent = stats7.rainDays;
@@ -2288,7 +2299,7 @@
           const rain30total = Object.values(daily30).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain30').textContent = fmt(rain30total) + ' mm';
 
-          const stats30 = calcRainStats(daily30);
+          const stats30 = calcRainStats(daily30, 0.2, 30);
           document.getElementById('rainMax30').textContent = fmt(stats30.maxDay.val) + ' mm';
           document.getElementById('rainMax30date').textContent = fmtDayMonth(stats30.maxDay.date);
           document.getElementById('rainDays30').textContent = stats30.rainDays;
