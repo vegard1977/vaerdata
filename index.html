@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.9 -->
+<!-- Værdata Siljan v1.10.10 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -16,6 +16,73 @@
     }
     h1 { text-align: center; margin-bottom: 10px; font-size: 1.5rem; }
     .updated { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+    
+    /* Podcast widget */
+    .header-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .podcast-widget {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #252542;
+      border-radius: 25px;
+      padding: 8px 15px;
+      font-size: 0.8rem;
+    }
+    .podcast-widget img {
+      width: 35px;
+      height: 35px;
+      border-radius: 6px;
+    }
+    .podcast-info-mini {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .podcast-title-mini {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: #eee;
+    }
+    .podcast-date-mini {
+      font-size: 0.65rem;
+      color: #888;
+    }
+    .podcast-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .podcast-play-btn {
+      background: #4ade80;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+    .podcast-play-btn:hover { transform: scale(1.1); }
+    .podcast-link {
+      color: #888;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: color 0.2s;
+    }
+    .podcast-link:hover { color: #eee; }
+    .podcast-link.spotify { color: #1DB954; }
+    .podcast-link.rss { color: #ff6b00; }
+    #podcastAudio { display: none; }
     .section-title {
       font-size: 0.85rem;
       color: #666;
@@ -186,6 +253,17 @@
     .police-item .police-time { font-size: 0.7rem; color: #666; margin-top: 5px; }
     
     @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .podcast-widget {
+        padding: 6px 12px;
+      }
+      .podcast-widget img {
+        width: 30px;
+        height: 30px;
+      }
       .forecast-grid {
         grid-template-columns: repeat(4, 1fr);
       }
@@ -204,7 +282,22 @@
   </style>
 </head>
 <body>
-  <h1>🌤️ Værdata Siljan</h1>
+  <div class="header-container">
+    <h1>🌤️ Værdata Siljan</h1>
+    <div class="podcast-widget">
+      <img src="weather/cover.jpg" alt="Podcast" id="podcastCover">
+      <div class="podcast-info-mini">
+        <span class="podcast-title-mini" id="podcastTitle">🎙️ Værpodcast</span>
+        <span class="podcast-date-mini" id="podcastDate">--</span>
+      </div>
+      <div class="podcast-controls">
+        <button class="podcast-play-btn" id="podcastPlayBtn" title="Spill av">▶</button>
+        <a href="https://open.spotify.com/show/5SU8rsyAyO8oh7hwSQ3u68" target="_blank" class="podcast-link spotify" title="Spotify">🎵</a>
+        <a href="weather/podcast.rss" target="_blank" class="podcast-link rss" title="RSS Feed">📻</a>
+      </div>
+    </div>
+  </div>
+  <audio id="podcastAudio"></audio>
   <div class="updated">Sist oppdatert: <span id="lastUpdate">--</span></div>
 
   <!-- Farevarsler øverst -->
@@ -877,7 +970,8 @@
     //   v1.10.6 - Added daylight card with sunrise/sunset and solstice tracking
     //   v1.10.7 - Added feels like/comfort, temp stats, and moon cards; reorganized card order
     //   v1.10.8 - Added aurora/northern lights card with NOAA Kp index
-    //   v1.10.9 - Norwegian comfort scale, sun position in irradiance card, stored energy in water levels
+    //   v1.10.9 - Norwegian comfort scale, sun position in irradiance card, stored energy in water levels, fixed dry streak
+    //   v1.10.10 - Added podcast widget in header with play/pause, Spotify and RSS links
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -2317,6 +2411,59 @@
       }
     }
 
+    // v1.10.10: Podcast player
+    let podcastPlaying = false;
+    const podcastAudio = document.getElementById('podcastAudio');
+    const podcastPlayBtn = document.getElementById('podcastPlayBtn');
+    
+    async function loadPodcast() {
+      try {
+        const response = await fetch('weather/podcast.rss');
+        const text = await response.text();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        
+        const item = xml.querySelector('item');
+        if (item) {
+          const title = item.querySelector('title')?.textContent || 'Værmelding';
+          const pubDate = item.querySelector('pubDate')?.textContent;
+          const audioUrl = item.querySelector('enclosure')?.getAttribute('url');
+          
+          document.getElementById('podcastTitle').textContent = '🎙️ ' + title;
+          
+          if (pubDate) {
+            const date = new Date(pubDate);
+            document.getElementById('podcastDate').textContent = date.toLocaleDateString('nb-NO', { 
+              day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+            });
+          }
+          
+          if (audioUrl) {
+            podcastAudio.src = audioUrl;
+          }
+        }
+      } catch (err) {
+        console.error('Feil ved lasting av podcast:', err);
+      }
+    }
+    
+    podcastPlayBtn.addEventListener('click', () => {
+      if (podcastPlaying) {
+        podcastAudio.pause();
+        podcastPlayBtn.textContent = '▶';
+        podcastPlaying = false;
+      } else {
+        podcastAudio.play();
+        podcastPlayBtn.textContent = '⏸';
+        podcastPlaying = true;
+      }
+    });
+    
+    podcastAudio.addEventListener('ended', () => {
+      podcastPlayBtn.textContent = '▶';
+      podcastPlaying = false;
+    });
+
     // Initial load
     updateDashboard();
     updateMetNoData();
@@ -2327,6 +2474,7 @@
     updateMoonCard();
     updateAuroraCard();
     updateSunPosition();
+    loadPodcast();
     
     // Refresh intervals
     setInterval(updateDashboard, 60000);       // Database data every minute
