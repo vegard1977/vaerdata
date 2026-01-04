@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
   <channel>
     <title>Siljan Værvarsel</title>
-    <link>https://vegard1977.github.io/vaerdata/\</link\>
+    <link>https://vegard1977.github.io/vaerdata/</link>
     <language>nb-NO</language>
     <copyright>&#169; 2026 Vegard</copyright>
     <itunes:author>Vegard</itunes:author>
@@ -14,7 +14,17 @@
     <itunes:image href="https://vegard1977.github.io/vaerdata/weather/cover.jpg"/>
     <itunes:category text="News"/>
     <itunes:explicit>false</itunes:explicit>
-    
+
+    <item>
+      <title>Værmelding 04.01.2026 kl 21:03</title>
+      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
+      <pubDate>Sun, 04 Jan 2026 21:03:46 +0100</pubDate>
+      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_04-01-2026_2103.mp3" length="310456" type="audio/mpeg"/>
+      <guid isPermaLink="false">siljan-vaer-04-01-2026_2103</guid>
+      <itunes:duration>180</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+
     <item>
       <title>Værmelding 04.01.2026 kl 20:40</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
@@ -24,7 +34,7 @@
       <itunes:duration>180</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
     </item>
-    
+
     <item>
       <title>Værmelding 04.01.2026 kl 20:35</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
