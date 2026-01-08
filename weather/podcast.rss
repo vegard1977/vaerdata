@@ -16,6 +16,16 @@
     <itunes:explicit>false</itunes:explicit>
 
     <item>
+      <title>Værmelding 08.01.2026 kl 07:01</title>
+      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
+      <pubDate>Thu, 08 Jan 2026 07:01:55 +0100</pubDate>
+      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_08-01-2026_0701.mp3" length="282291" type="audio/mpeg"/>
+      <guid isPermaLink="false">siljan-vaer-08-01-2026_0701</guid>
+      <itunes:duration>180</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+
+    <item>
       <title>Værmelding 07.01.2026 kl 18:01</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
       <pubDate>Wed, 07 Jan 2026 18:01:00 +0100</pubDate>
