@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <!-- Flyradar Siljan v1.0 -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flyradar Siljan</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e; 
+      color: #eee;
+    }
+    .header {
+      background: #252542;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 1.3rem; }
+    .header a { color: #60a5fa; text-decoration: none; }
+    .header a:hover { text-decoration: underline; }
+    .container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    #map {
+      flex: 1;
+      min-height: 400px;
+    }
+    .sidebar {
+      width: 320px;
+      background: #252542;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .sidebar h2 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .aircraft-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .aircraft-card {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      border-left: 3px solid #60a5fa;
+    }
+    .aircraft-card:hover {
+      background: #2a2a4e;
+    }
+    .aircraft-card.selected {
+      background: #2a2a4e;
+      border-left-color: #4ade80;
+    }
+    .ac-flight {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #60a5fa;
+    }
+    .ac-details {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    .ac-distance {
+      font-size: 0.8rem;
+      color: #4ade80;
+      margin-top: 3px;
+    }
+    .stats {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 0.85rem;
+    }
+    .stat-label { color: #888; }
+    .stat-value { color: #eee; }
+    .updated {
+      margin-top: 15px;
+      font-size: 0.75rem;
+      color: #666;
+      text-align: center;
+    }
+    @media (max-width: 768px) {
+      .container { flex-direction: column; }
+      .sidebar { width: 100%; height: 40vh; }
+      #map { height: 60vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>✈️ Flyradar Siljan</h1>
+    <a href="index.html">← Tilbake til værdata</a>
+  </div>
+  
+  <div class="container">
+    <div id="map"></div>
+    <div class="sidebar">
+      <h2>Fly i nærheten</h2>
+      <div class="aircraft-list" id="aircraftList">
+        <div style="color: #888; font-size: 0.9rem;">Laster flydata...</div>
+      </div>
+      
+      <div class="stats">
+        <h2>Statistikk</h2>
+        <div class="stat-row">
+          <span class="stat-label">Fly akkurat nå:</span>
+          <span class="stat-value" id="statNow">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">I dag:</span>
+          <span class="stat-value" id="statToday">-</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Siste 7 dager:</span>
+          <span class="stat-value" id="stat7d">-</span>
+        </div>
+      </div>
+      
+      <div class="updated">
+        Sist oppdatert: <span id="lastUpdate">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Config
+    const SILJAN_LAT = 59.2924;
+    const SILJAN_LON = 9.7072;
+    const SUPABASE_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
+    
+    // State
+    let map;
+    let markers = {};
+    let selectedHex = null;
+    
+    // Get hex from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    selectedHex = urlParams.get('hex');
+    
+    // Init map
+    function initMap() {
+      map = L.map('map').setView([SILJAN_LAT, SILJAN_LON], 10);
+      
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CARTO',
+        maxZoom: 19
+      }).addTo(map);
+      
+      // Add Siljan marker
+      L.circleMarker([SILJAN_LAT, SILJAN_LON], {
+        radius: 8,
+        fillColor: '#4ade80',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.8
+      }).addTo(map).bindPopup('📍 Siljan');
+      
+      // Add 100km circle
+      L.circle([SILJAN_LAT, SILJAN_LON], {
+        radius: 100000,
+        color: '#60a5fa',
+        fillColor: '#60a5fa',
+        fillOpacity: 0.05,
+        weight: 1,
+        dashArray: '5, 10'
+      }).addTo(map);
+    }
+    
+    // Heading to direction
+    function headingToDirection(degrees) {
+      if (degrees === null || degrees === undefined) return '';
+      const directions = ['N', 'NØ', 'Ø', 'SØ', 'S', 'SV', 'V', 'NV'];
+      const index = Math.round(degrees / 45) % 8;
+      return directions[index];
+    }
+    
+    // Create aircraft icon
+    function createAircraftIcon(track, isSelected) {
+      const rotation = track || 0;
+      const color = isSelected ? '#4ade80' : '#60a5fa';
+      return L.divIcon({
+        html: `<div style="transform: rotate(${rotation}deg); font-size: 20px; color: ${color};">✈️</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        className: 'aircraft-icon'
+      });
+    }
+    
+    // Update aircraft
+    async function updateAircraft() {
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/aircraft_live?select=*&order=distance_km.asc`,
+          { headers: { 'apikey': SUPABASE_KEY } }
+        );
+        const aircraft = await response.json();
+        
+        // Clear old markers
+        Object.values(markers).forEach(m => map.removeLayer(m));
+        markers = {};
+        
+        // Update list and markers
+        const listEl = document.getElementById('aircraftList');
+        
+        if (!aircraft || aircraft.length === 0) {
+          listEl.innerHTML = '<div style="color: #888; font-size: 0.9rem;">Ingen fly i nærheten</div>';
+          document.getElementById('statNow').textContent = '0';
+        } else {
+          listEl.innerHTML = '';
+          document.getElementById('statNow').textContent = aircraft.length;
+          
+          aircraft.forEach(ac => {
+            const flight = ac.flight?.trim() || ac.hex;
+            const isSelected = ac.hex === selectedHex;
+            const direction = headingToDirection(ac.track);
+            
+            // Add marker
+            const marker = L.marker([ac.lat, ac.lon], {
+              icon: createAircraftIcon(ac.track, isSelected)
+            }).addTo(map);
+            
+            marker.bindPopup(`
+              <b>${flight}</b><br>
+              ${ac.altitude_ft || '?'} ft<br>
+              ${ac.speed_kts || '?'} kts ${direction}<br>
+              ${ac.distance_km} km fra Siljan
+            `);
+            
+            markers[ac.hex] = marker;
+            
+            // If selected, open popup and center
+            if (isSelected) {
+              marker.openPopup();
+              map.setView([ac.lat, ac.lon], 11);
+            }
+            
+            // Add to list
+            const card = document.createElement('div');
+            card.className = `aircraft-card${isSelected ? ' selected' : ''}`;
+            card.innerHTML = `
+              <div class="ac-flight">✈️ ${flight}</div>
+              <div class="ac-details">${ac.altitude_ft || '?'} ft • ${ac.speed_kts || '?'} kts • ${direction}</div>
+              <div class="ac-distance">${ac.distance_km} km fra Siljan</div>
+            `;
+            card.onclick = () => {
+              selectedHex = ac.hex;
+              map.setView([ac.lat, ac.lon], 11);
+              marker.openPopup();
+              updateAircraft(); // Refresh to update selection
+            };
+            listEl.appendChild(card);
+          });
+        }
+        
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('nb-NO');
+        
+      } catch (err) {
+        console.error('Feil ved henting av flydata:', err);
+      }
+    }
+    
+    // Get stats
+    async function updateStats() {
+      try {
+        // Today
+        const today = new Date().toISOString().split('T')[0];
+        const todayResp = await fetch(
+          `${SUPABASE_URL}/rest/v1/aircraft_stats?select=hex&date=eq.${today}`,
+          { headers: { 'apikey': SUPABASE_KEY } }
+        );
+        const todayData = await todayResp.json();
+        document.getElementById('statToday').textContent = todayData?.length || 0;
+        
+        // Last 7 days
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const weekResp = await fetch(
+          `${SUPABASE_URL}/rest/v1/aircraft_stats?select=hex&date=gte.${weekAgo}`,
+          { headers: { 'apikey': SUPABASE_KEY } }
+        );
+        const weekData = await weekResp.json();
+        document.getElementById('stat7d').textContent = weekData?.length || 0;
+        
+      } catch (err) {
+        console.error('Feil ved henting av statistikk:', err);
+      }
+    }
+    
+    // Init
+    initMap();
+    updateAircraft();
+    updateStats();
+    
+    // Refresh every 30 seconds
+    setInterval(updateAircraft, 30000);
+    setInterval(updateStats, 300000); // Stats every 5 min
+  </script>
+</body>
+</html>
