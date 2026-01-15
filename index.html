@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.14 -->
+<!-- Værdata Siljan v1.10.15 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1967,7 +1967,7 @@
       alertContent.innerHTML = html;
     }
 
-    // v1.10.13: Aircraft alerts from Supabase
+    // v1.10.14: Aircraft alerts from Supabase
     function headingToDirection(degrees) {
       if (degrees === null || degrees === undefined) return '';
       const directions = ['nord', 'nordøst', 'øst', 'sørøst', 'sør', 'sørvest', 'vest', 'nordvest'];
@@ -1978,15 +1978,28 @@
     async function updateAircraftAlerts() {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/aircraft_live?select=*&order=distance_km.asc&limit=3`,
+          `${SUPABASE_URL}/rest/v1/aircraft_live?select=*&order=timestamp.desc`,
           { headers: { 'apikey': SUPABASE_KEY } }
         );
-        const aircraft = await response.json();
+        const allPositions = await response.json();
         
         aircraftAlerts = [];
         
-        if (aircraft && aircraft.length > 0) {
-          for (const ac of aircraft) {
+        if (allPositions && allPositions.length > 0) {
+          // Group by hex, keep only latest position per aircraft
+          const latestByHex = {};
+          for (const ac of allPositions) {
+            if (!latestByHex[ac.hex]) {
+              latestByHex[ac.hex] = ac;
+            }
+          }
+          
+          // Sort by distance and take top 3
+          const uniqueAircraft = Object.values(latestByHex)
+            .sort((a, b) => a.distance_km - b.distance_km)
+            .slice(0, 3);
+          
+          for (const ac of uniqueAircraft) {
             const direction = headingToDirection(ac.track);
             const flight = ac.flight?.trim() || ac.hex;
             const desc = `${ac.speed_kts || '?'} kts, ${ac.altitude_ft || '?'} ft${direction ? `, mot ${direction}` : ''} (${ac.distance_km} km)`;
