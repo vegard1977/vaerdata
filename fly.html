@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <!-- Flyradar Siljan v1.0 -->
+  <!-- Flyradar Siljan v1.1 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flyradar Siljan</title>
@@ -152,6 +152,7 @@
     // State
     let map;
     let markers = {};
+    let trails = {};
     let selectedHex = null;
     
     // Get hex from URL parameter
@@ -211,48 +212,80 @@
     async function updateAircraft() {
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/aircraft_live?select=*&order=distance_km.asc`,
+          `${SUPABASE_URL}/rest/v1/aircraft_live?select=*&order=timestamp.asc`,
           { headers: { 'apikey': SUPABASE_KEY } }
         );
-        const aircraft = await response.json();
+        const allPositions = await response.json();
         
-        // Clear old markers
+        // Clear old markers and trails
         Object.values(markers).forEach(m => map.removeLayer(m));
+        Object.values(trails).forEach(t => map.removeLayer(t));
         markers = {};
+        trails = {};
+        
+        // Group positions by hex
+        const aircraftByHex = {};
+        for (const pos of allPositions) {
+          if (!aircraftByHex[pos.hex]) {
+            aircraftByHex[pos.hex] = [];
+          }
+          aircraftByHex[pos.hex].push(pos);
+        }
         
         // Update list and markers
         const listEl = document.getElementById('aircraftList');
+        const uniqueAircraft = Object.keys(aircraftByHex);
         
-        if (!aircraft || aircraft.length === 0) {
+        if (uniqueAircraft.length === 0) {
           listEl.innerHTML = '<div style="color: #888; font-size: 0.9rem;">Ingen fly i nærheten</div>';
           document.getElementById('statNow').textContent = '0';
         } else {
           listEl.innerHTML = '';
-          document.getElementById('statNow').textContent = aircraft.length;
+          document.getElementById('statNow').textContent = uniqueAircraft.length;
           
-          aircraft.forEach(ac => {
-            const flight = ac.flight?.trim() || ac.hex;
-            const isSelected = ac.hex === selectedHex;
-            const direction = headingToDirection(ac.track);
+          // Sort by latest distance
+          const sortedAircraft = uniqueAircraft
+            .map(hex => {
+              const positions = aircraftByHex[hex];
+              return { hex, positions, latest: positions[positions.length - 1] };
+            })
+            .sort((a, b) => a.latest.distance_km - b.latest.distance_km);
+          
+          sortedAircraft.forEach(({ hex, positions, latest }) => {
+            const flight = latest.flight?.trim() || hex;
+            const isSelected = hex === selectedHex;
+            const direction = headingToDirection(latest.track);
             
-            // Add marker
-            const marker = L.marker([ac.lat, ac.lon], {
-              icon: createAircraftIcon(ac.track, isSelected)
+            // Draw trail (polyline from all positions)
+            if (positions.length > 1) {
+              const trailCoords = positions.map(p => [p.lat, p.lon]);
+              const trail = L.polyline(trailCoords, {
+                color: isSelected ? '#4ade80' : '#60a5fa',
+                weight: 2,
+                opacity: 0.6,
+                dashArray: '5, 5'
+              }).addTo(map);
+              trails[hex] = trail;
+            }
+            
+            // Add marker at latest position
+            const marker = L.marker([latest.lat, latest.lon], {
+              icon: createAircraftIcon(latest.track, isSelected)
             }).addTo(map);
             
             marker.bindPopup(`
               <b>${flight}</b><br>
-              ${ac.altitude_ft || '?'} ft<br>
-              ${ac.speed_kts || '?'} kts ${direction}<br>
-              ${ac.distance_km} km fra Siljan
+              ${latest.altitude_ft || '?'} ft<br>
+              ${latest.speed_kts || '?'} kts ${direction}<br>
+              ${latest.distance_km} km fra Siljan
             `);
             
-            markers[ac.hex] = marker;
+            markers[hex] = marker;
             
             // If selected, open popup and center
             if (isSelected) {
               marker.openPopup();
-              map.setView([ac.lat, ac.lon], 11);
+              map.setView([latest.lat, latest.lon], 11);
             }
             
             // Add to list
@@ -260,12 +293,12 @@
             card.className = `aircraft-card${isSelected ? ' selected' : ''}`;
             card.innerHTML = `
               <div class="ac-flight">✈️ ${flight}</div>
-              <div class="ac-details">${ac.altitude_ft || '?'} ft • ${ac.speed_kts || '?'} kts • ${direction}</div>
-              <div class="ac-distance">${ac.distance_km} km fra Siljan</div>
+              <div class="ac-details">${latest.altitude_ft || '?'} ft • ${latest.speed_kts || '?'} kts • ${direction}</div>
+              <div class="ac-distance">${latest.distance_km} km fra Siljan</div>
             `;
             card.onclick = () => {
-              selectedHex = ac.hex;
-              map.setView([ac.lat, ac.lon], 11);
+              selectedHex = hex;
+              map.setView([latest.lat, latest.lon], 11);
               marker.openPopup();
               updateAircraft(); // Refresh to update selection
             };
