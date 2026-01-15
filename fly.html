@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <!-- Flyradar Siljan v1.1 -->
+  <!-- Flyradar Siljan v1.2 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flyradar Siljan</title>
@@ -196,6 +196,10 @@
       return directions[index];
     }
     
+    // Unit conversions
+    function knotsToKmh(kts) { return Math.round(kts * 1.852); }
+    function feetToMeters(ft) { return Math.round(ft * 0.3048); }
+    
     // Create aircraft icon
     function createAircraftIcon(track, isSelected) {
       const rotation = track || 0;
@@ -273,10 +277,15 @@
               icon: createAircraftIcon(latest.track, isSelected)
             }).addTo(map);
             
+            const speedKts = latest.speed_kts || 0;
+            const altFt = latest.altitude_ft || 0;
+            const speedKmh = knotsToKmh(speedKts);
+            const altM = feetToMeters(altFt);
+            
             marker.bindPopup(`
               <b>${flight}</b><br>
-              ${latest.altitude_ft || '?'} ft<br>
-              ${latest.speed_kts || '?'} kts ${direction}<br>
+              ${altFt} ft (${altM} m)<br>
+              ${speedKts} kts (${speedKmh} km/t) ${direction}<br>
               ${latest.distance_km} km fra Siljan
             `);
             
@@ -293,7 +302,7 @@
             card.className = `aircraft-card${isSelected ? ' selected' : ''}`;
             card.innerHTML = `
               <div class="ac-flight">✈️ ${flight}</div>
-              <div class="ac-details">${latest.altitude_ft || '?'} ft • ${latest.speed_kts || '?'} kts • ${direction}</div>
+              <div class="ac-details">${altFt} ft (${altM} m) • ${speedKts} kts (${speedKmh} km/t) • ${direction}</div>
               <div class="ac-distance">${latest.distance_km} km fra Siljan</div>
             `;
             card.onclick = () => {
