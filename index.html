@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.15 -->
+<!-- Værdata Siljan v1.10.16 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1967,13 +1967,16 @@
       alertContent.innerHTML = html;
     }
 
-    // v1.10.14: Aircraft alerts from Supabase
+    // v1.10.16: Aircraft alerts from Supabase
     function headingToDirection(degrees) {
       if (degrees === null || degrees === undefined) return '';
       const directions = ['nord', 'nordøst', 'øst', 'sørøst', 'sør', 'sørvest', 'vest', 'nordvest'];
       const index = Math.round(degrees / 45) % 8;
       return directions[index];
     }
+
+    function knotsToKmh(kts) { return Math.round(kts * 1.852); }
+    function feetToMeters(ft) { return Math.round(ft * 0.3048); }
 
     async function updateAircraftAlerts() {
       try {
@@ -2002,7 +2005,11 @@
           for (const ac of uniqueAircraft) {
             const direction = headingToDirection(ac.track);
             const flight = ac.flight?.trim() || ac.hex;
-            const desc = `${ac.speed_kts || '?'} kts, ${ac.altitude_ft || '?'} ft${direction ? `, mot ${direction}` : ''} (${ac.distance_km} km)`;
+            const speedKts = ac.speed_kts || 0;
+            const altFt = ac.altitude_ft || 0;
+            const speedKmh = knotsToKmh(speedKts);
+            const altM = feetToMeters(altFt);
+            const desc = `${speedKts} kts (${speedKmh} km/t), ${altFt} ft (${altM} m)${direction ? `, mot ${direction}` : ''} (${ac.distance_km} km)`;
             
             aircraftAlerts.push({
               title: `✈️ ${flight}`,
