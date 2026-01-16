@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <!-- Flyradar Siljan v1.4 -->
+  <!-- Flyradar Siljan v1.5 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flyradar Siljan</title>
@@ -307,6 +307,12 @@
               ${speedKts} kts (${speedKmh} km/t) ${direction}<br>
               ${latest.distance_km} km fra Siljan
             `);
+            
+            // Click on marker to select and highlight trace
+            marker.on('click', () => {
+              selectedHex = hex;
+              updateAircraft();
+            });
             
             markers[hex] = marker;
             
