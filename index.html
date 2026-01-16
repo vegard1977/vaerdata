@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.16 -->
+<!-- Værdata Siljan v1.10.17 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1000,6 +1000,10 @@
     //   v1.10.11 - Use Met.no Sunrise API for accurate sunrise/sunset, added source attribution for water levels
     //   v1.10.12 - Podcast widget with 3 daily time slots (07:00, 12:00, 18:00)
     //   v1.10.13 - Fixed MetAlerts severity color parsing
+    //   v1.10.14 - Aircraft alerts in warning section, link to fly.html radar page
+    //   v1.10.15 - Aircraft: one entry per plane, trail lines on map
+    //   v1.10.16 - Aircraft: metric units (km/t, m) alongside knots/feet
+    //   v1.10.17 - Daylight from Supabase (sun.sun sync), aircraft 30min timeout, SVG icons rotated with heading
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1167,14 +1171,53 @@
       };
     }
 
+    // v1.10.17: Fetch daylight from Supabase (synced with HA sun.sun)
+    async function fetchDaylightFromSupabase() {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/daylight_data?date=eq.${today}&limit=1`,
+          { headers: { 'apikey': SUPABASE_KEY } }
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const row = data[0];
+          // Parse TIME format "HH:MM:SS" to decimal hours
+          const parseTime = (timeStr) => {
+            if (!timeStr) return null;
+            const [h, m, s] = timeStr.split(':').map(Number);
+            return h + m/60 + (s||0)/3600;
+          };
+          
+          const sunrise = parseTime(row.sunrise);
+          const sunset = parseTime(row.sunset);
+          const dayLength = row.daylight_minutes || ((sunset - sunrise) * 60);
+          
+          return {
+            sunrise,
+            sunset,
+            dayLength,
+            dayChange: row.daylight_change || 0,
+            sunriseStr: row.sunrise?.substring(0, 5),
+            sunsetStr: row.sunset?.substring(0, 5)
+          };
+        }
+        return null;
+      } catch (err) {
+        console.error('Feil ved henting av dagslys fra Supabase:', err);
+        return null;
+      }
+    }
+
     async function updateDaylightCard() {
       const today = new Date();
       
-      // Fetch today's data from Met.no (authoritative)
-      const metNoData = await fetchMetNoSunrise(today);
+      // Fetch today's data from Supabase (from HA sun.sun)
+      const supabaseData = await fetchDaylightFromSupabase();
       
-      // Use Met.no data if available, otherwise fallback to local calculation
-      const todaySun = metNoData && metNoData.dayLength ? metNoData : calculateSunTimes(today, METNO_LAT, METNO_LON);
+      // Use Supabase data if available, otherwise fallback to local calculation
+      const todaySun = supabaseData || calculateSunTimes(today, METNO_LAT, METNO_LON);
       
       // Day length display
       if (todaySun.polarDay) {
@@ -1188,19 +1231,32 @@
         const mins = Math.round(todaySun.dayLength % 60);
         document.getElementById('dayLength').textContent = `${hours}t ${mins}m`;
         document.getElementById('dayLengthUnit').textContent = '';
-        document.getElementById('sunTimes').textContent = `☀️ ${formatHourToTime(todaySun.sunrise)} → ${formatHourToTime(todaySun.sunset)}`;
+        
+        // Use string format if from Supabase, otherwise format from decimal
+        if (supabaseData && supabaseData.sunriseStr) {
+          document.getElementById('sunTimes').textContent = `☀️ ${supabaseData.sunriseStr} → ${supabaseData.sunsetStr}`;
+        } else {
+          document.getElementById('sunTimes').textContent = `☀️ ${formatHourToTime(todaySun.sunrise)} → ${formatHourToTime(todaySun.sunset)}`;
+        }
       }
       
-      // Yesterday comparison
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdaySun = calculateSunTimes(yesterday, METNO_LAT, METNO_LON);
-      const changeToday = todaySun.dayLength - yesterdaySun.dayLength;
-      const changeTodayEl = document.getElementById('dayChange');
-      changeTodayEl.textContent = formatChange(changeToday);
-      changeTodayEl.className = 'stat-value ' + (changeToday >= 0 ? 'trend-up' : 'trend-down');
+      // Use Supabase dayChange if available, otherwise calculate
+      if (supabaseData && supabaseData.dayChange !== undefined) {
+        const changeTodayEl = document.getElementById('dayChange');
+        changeTodayEl.textContent = formatChange(supabaseData.dayChange);
+        changeTodayEl.className = 'stat-value ' + (supabaseData.dayChange >= 0 ? 'trend-up' : 'trend-down');
+      } else {
+        // Yesterday comparison (fallback)
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdaySun = calculateSunTimes(yesterday, METNO_LAT, METNO_LON);
+        const changeToday = todaySun.dayLength - yesterdaySun.dayLength;
+        const changeTodayEl = document.getElementById('dayChange');
+        changeTodayEl.textContent = formatChange(changeToday);
+        changeTodayEl.className = 'stat-value ' + (changeToday >= 0 ? 'trend-up' : 'trend-down');
+      }
       
-      // 7 days ago
+      // 7 days ago (calculated)
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
       const weekAgoSun = calculateSunTimes(weekAgo, METNO_LAT, METNO_LON);
@@ -1209,7 +1265,7 @@
       change7El.textContent = formatChange(change7);
       change7El.className = 'stat-value ' + (change7 >= 0 ? 'trend-up' : 'trend-down');
       
-      // 30 days ago
+      // 30 days ago (calculated)
       const monthAgo = new Date(today);
       monthAgo.setDate(monthAgo.getDate() - 30);
       const monthAgoSun = calculateSunTimes(monthAgo, METNO_LAT, METNO_LON);
@@ -1232,10 +1288,6 @@
       
       if (daysGettingLonger) {
         // Winter -> Summer: days getting longer
-        const prevWinter = today < solstices.summer ? solstices.winter : getSolstices(year - 1).winter;
-        if (today > new Date(year, 0, 1) && today < solstices.summer) {
-          // After Jan 1, before summer solstice - use this year's winter or last year's
-        }
         const actualPrevWinter = today.getMonth() < 6 ? getSolstices(year - 1).winter : solstices.winter;
         const winterSun = calculateSunTimes(actualPrevWinter, METNO_LAT, METNO_LON);
         const sinceSolstice = todaySun.dayLength - winterSun.dayLength;
@@ -1967,7 +2019,7 @@
       alertContent.innerHTML = html;
     }
 
-    // v1.10.16: Aircraft alerts from Supabase
+    // v1.10.17: Aircraft alerts from Supabase
     function headingToDirection(degrees) {
       if (degrees === null || degrees === undefined) return '';
       const directions = ['nord', 'nordøst', 'øst', 'sørøst', 'sør', 'sørvest', 'vest', 'nordvest'];
@@ -1989,10 +2041,15 @@
         aircraftAlerts = [];
         
         if (allPositions && allPositions.length > 0) {
+          // 30 minute timeout
+          const timeoutMs = 30 * 60 * 1000;
+          const now = Date.now();
+          
           // Group by hex, keep only latest position per aircraft
           const latestByHex = {};
           for (const ac of allPositions) {
-            if (!latestByHex[ac.hex]) {
+            const posTime = new Date(ac.timestamp).getTime();
+            if (now - posTime <= timeoutMs && !latestByHex[ac.hex]) {
               latestByHex[ac.hex] = ac;
             }
           }
