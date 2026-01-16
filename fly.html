@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <!-- Flyradar Siljan v1.5 -->
+  <!-- Flyradar Siljan v1.6 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flyradar Siljan</title>
@@ -316,10 +316,9 @@
             
             markers[hex] = marker;
             
-            // If selected, open popup and center
+            // If selected, open popup
             if (isSelected) {
               marker.openPopup();
-              map.setView([latest.lat, latest.lon], 11);
             }
             
             // Add to list
@@ -332,7 +331,6 @@
             `;
             card.onclick = () => {
               selectedHex = hex;
-              map.setView([latest.lat, latest.lon], 11);
               marker.openPopup();
               updateAircraft(); // Refresh to update selection
             };
