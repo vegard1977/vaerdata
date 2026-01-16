@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <!-- Flyradar Siljan v1.3 -->
+  <!-- Flyradar Siljan v1.4 -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flyradar Siljan</title>
@@ -284,7 +284,7 @@
               const trailCoords = positions.map(p => [p.lat, p.lon]);
               const trail = L.polyline(trailCoords, {
                 color: isSelected ? '#4ade80' : '#60a5fa',
-                weight: isSelected ? 4 : 2,
+                weight: isSelected ? 1.5 : 0.7,
                 opacity: isSelected ? 0.9 : 0.5,
                 dashArray: isSelected ? null : '5, 5'
               }).addTo(map);
