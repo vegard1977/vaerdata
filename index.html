@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.18 -->
+<!-- Værdata Siljan v1.10.19 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1005,6 +1005,7 @@
     //   v1.10.16 - Aircraft: metric units (km/t, m) alongside knots/feet
     //   v1.10.17 - Daylight from Supabase (sun.sun sync), aircraft 30min timeout, SVG icons rotated with heading
     //   v1.10.18 - Fixed daylight calculation: Supabase for sunrise/sunset display only, all else calculated locally
+    //   v1.10.19 - Fixed daylight: Calculate duration from Supabase sunrise/sunset (synced with podcast)
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1214,38 +1215,38 @@
     async function updateDaylightCard() {
       const today = new Date();
       
-      // Fetch today's sunrise/sunset from Supabase (from HA sun.sun) for display
+      // Fetch today's sunrise/sunset from Supabase (from HA sun.sun)
       const supabaseData = await fetchDaylightFromSupabase();
       
-      // Always use local calculation for dayLength and comparisons (for consistency)
-      const todaySun = calculateSunTimes(today, METNO_LAT, METNO_LON);
+      // Use Supabase dayLength if available (calculated from sun.sun), else local
+      let todayDayLength;
+      let sunriseStr, sunsetStr;
       
-      // Day length display
-      if (todaySun.polarDay) {
-        document.getElementById('dayLength').textContent = '24';
-        document.getElementById('dayLengthUnit').textContent = 't (midnattssol)';
-      } else if (todaySun.polarNight) {
-        document.getElementById('dayLength').textContent = '0';
-        document.getElementById('dayLengthUnit').textContent = 't (mørketid)';
+      if (supabaseData && supabaseData.sunrise !== null && supabaseData.sunset !== null) {
+        // Calculate dayLength from Supabase sunrise/sunset (matches podcast)
+        todayDayLength = (supabaseData.sunset - supabaseData.sunrise) * 60;
+        sunriseStr = supabaseData.sunriseStr;
+        sunsetStr = supabaseData.sunsetStr;
       } else {
-        const hours = Math.floor(todaySun.dayLength / 60);
-        const mins = Math.round(todaySun.dayLength % 60);
-        document.getElementById('dayLength').textContent = `${hours}t ${mins}m`;
-        document.getElementById('dayLengthUnit').textContent = '';
-        
-        // Use Supabase times for sunrise/sunset display (synced with podcast/HA)
-        if (supabaseData && supabaseData.sunriseStr) {
-          document.getElementById('sunTimes').textContent = `☀️ ${supabaseData.sunriseStr} → ${supabaseData.sunsetStr}`;
-        } else {
-          document.getElementById('sunTimes').textContent = `☀️ ${formatHourToTime(todaySun.sunrise)} → ${formatHourToTime(todaySun.sunset)}`;
-        }
+        // Fallback to local calculation
+        const localSun = calculateSunTimes(today, METNO_LAT, METNO_LON);
+        todayDayLength = localSun.dayLength;
+        sunriseStr = formatHourToTime(localSun.sunrise);
+        sunsetStr = formatHourToTime(localSun.sunset);
       }
       
-      // Yesterday comparison (all calculated locally for consistency)
+      // Day length display
+      const hours = Math.floor(todayDayLength / 60);
+      const mins = Math.round(todayDayLength % 60);
+      document.getElementById('dayLength').textContent = `${hours}t ${mins}m`;
+      document.getElementById('dayLengthUnit').textContent = '';
+      document.getElementById('sunTimes').textContent = `☀️ ${sunriseStr} → ${sunsetStr}`;
+      
+      // Yesterday - use same source for consistency
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdaySun = calculateSunTimes(yesterday, METNO_LAT, METNO_LON);
-      const changeToday = todaySun.dayLength - yesterdaySun.dayLength;
+      const changeToday = todayDayLength - yesterdaySun.dayLength;
       const changeTodayEl = document.getElementById('dayChange');
       changeTodayEl.textContent = formatChange(changeToday);
       changeTodayEl.className = 'stat-value ' + (changeToday >= 0 ? 'trend-up' : 'trend-down');
@@ -1254,7 +1255,7 @@
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
       const weekAgoSun = calculateSunTimes(weekAgo, METNO_LAT, METNO_LON);
-      const change7 = todaySun.dayLength - weekAgoSun.dayLength;
+      const change7 = todayDayLength - weekAgoSun.dayLength;
       const change7El = document.getElementById('dayChange7');
       change7El.textContent = formatChange(change7);
       change7El.className = 'stat-value ' + (change7 >= 0 ? 'trend-up' : 'trend-down');
@@ -1263,7 +1264,7 @@
       const monthAgo = new Date(today);
       monthAgo.setDate(monthAgo.getDate() - 30);
       const monthAgoSun = calculateSunTimes(monthAgo, METNO_LAT, METNO_LON);
-      const change30 = todaySun.dayLength - monthAgoSun.dayLength;
+      const change30 = todayDayLength - monthAgoSun.dayLength;
       const change30El = document.getElementById('dayChange30');
       change30El.textContent = formatChange(change30);
       change30El.className = 'stat-value ' + (change30 >= 0 ? 'trend-up' : 'trend-down');
@@ -1284,7 +1285,7 @@
         // Winter -> Summer: days getting longer
         const actualPrevWinter = today.getMonth() < 6 ? getSolstices(year - 1).winter : solstices.winter;
         const winterSun = calculateSunTimes(actualPrevWinter, METNO_LAT, METNO_LON);
-        const sinceSolstice = todaySun.dayLength - winterSun.dayLength;
+        const sinceSolstice = todayDayLength - winterSun.dayLength;
         const daysSince = Math.floor((today - actualPrevWinter) / 86400000);
         const daysTo = Math.floor((summerSolstice - today) / 86400000);
         
@@ -1299,7 +1300,7 @@
       } else {
         // Summer -> Winter: days getting shorter
         const summerSun = calculateSunTimes(solstices.summer, METNO_LAT, METNO_LON);
-        const sinceSolstice = todaySun.dayLength - summerSun.dayLength;
+        const sinceSolstice = todayDayLength - summerSun.dayLength;
         const daysSince = Math.floor((today - solstices.summer) / 86400000);
         const daysTo = Math.floor((solstices.winter - today) / 86400000);
         
