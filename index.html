@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.17 -->
+<!-- Værdata Siljan v1.10.18 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1004,6 +1004,7 @@
     //   v1.10.15 - Aircraft: one entry per plane, trail lines on map
     //   v1.10.16 - Aircraft: metric units (km/t, m) alongside knots/feet
     //   v1.10.17 - Daylight from Supabase (sun.sun sync), aircraft 30min timeout, SVG icons rotated with heading
+    //   v1.10.18 - Fixed daylight calculation: Supabase for sunrise/sunset display only, all else calculated locally
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1213,11 +1214,11 @@
     async function updateDaylightCard() {
       const today = new Date();
       
-      // Fetch today's data from Supabase (from HA sun.sun)
+      // Fetch today's sunrise/sunset from Supabase (from HA sun.sun) for display
       const supabaseData = await fetchDaylightFromSupabase();
       
-      // Use Supabase data if available, otherwise fallback to local calculation
-      const todaySun = supabaseData || calculateSunTimes(today, METNO_LAT, METNO_LON);
+      // Always use local calculation for dayLength and comparisons (for consistency)
+      const todaySun = calculateSunTimes(today, METNO_LAT, METNO_LON);
       
       // Day length display
       if (todaySun.polarDay) {
@@ -1232,7 +1233,7 @@
         document.getElementById('dayLength').textContent = `${hours}t ${mins}m`;
         document.getElementById('dayLengthUnit').textContent = '';
         
-        // Use string format if from Supabase, otherwise format from decimal
+        // Use Supabase times for sunrise/sunset display (synced with podcast/HA)
         if (supabaseData && supabaseData.sunriseStr) {
           document.getElementById('sunTimes').textContent = `☀️ ${supabaseData.sunriseStr} → ${supabaseData.sunsetStr}`;
         } else {
@@ -1240,21 +1241,14 @@
         }
       }
       
-      // Use Supabase dayChange if available, otherwise calculate
-      if (supabaseData && supabaseData.dayChange !== undefined) {
-        const changeTodayEl = document.getElementById('dayChange');
-        changeTodayEl.textContent = formatChange(supabaseData.dayChange);
-        changeTodayEl.className = 'stat-value ' + (supabaseData.dayChange >= 0 ? 'trend-up' : 'trend-down');
-      } else {
-        // Yesterday comparison (fallback)
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdaySun = calculateSunTimes(yesterday, METNO_LAT, METNO_LON);
-        const changeToday = todaySun.dayLength - yesterdaySun.dayLength;
-        const changeTodayEl = document.getElementById('dayChange');
-        changeTodayEl.textContent = formatChange(changeToday);
-        changeTodayEl.className = 'stat-value ' + (changeToday >= 0 ? 'trend-up' : 'trend-down');
-      }
+      // Yesterday comparison (all calculated locally for consistency)
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdaySun = calculateSunTimes(yesterday, METNO_LAT, METNO_LON);
+      const changeToday = todaySun.dayLength - yesterdaySun.dayLength;
+      const changeTodayEl = document.getElementById('dayChange');
+      changeTodayEl.textContent = formatChange(changeToday);
+      changeTodayEl.className = 'stat-value ' + (changeToday >= 0 ? 'trend-up' : 'trend-down');
       
       // 7 days ago (calculated)
       const weekAgo = new Date(today);
