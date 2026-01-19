@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.21 -->
+<!-- Værdata Siljan v1.10.22 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1008,6 +1008,7 @@
     //   v1.10.19 - Fixed daylight: Calculate duration from Supabase sunrise/sunset (synced with podcast)
     //   v1.10.20 - Reverted to local daylight calculations
     //   v1.10.21 - Police alerts in warning box (max 2, within 36 hours)
+    //   v1.10.22 - Police: group updates by case ID (1 case with all updates). Aircraft: 1 fly in alerts
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -2051,10 +2052,10 @@
             }
           }
           
-          // Sort by distance and take top 3
+          // Sort by distance and take top 1
           const uniqueAircraft = Object.values(latestByHex)
             .sort((a, b) => a.distance_km - b.distance_km)
-            .slice(0, 3);
+            .slice(0, 1);
           
           for (const ac of uniqueAircraft) {
             const direction = headingToDirection(ac.track);
@@ -2208,35 +2209,73 @@
           return;
         }
         
-        let html = '';
-        let alertCount = 0;
-        
+        // Group by case ID (extract from event_id: .../26n1bh/0 -> 26n1bh)
+        const caseGroups = {};
         for (const event of data) {
-          // Add to police list (all events)
-          if (html.split('police-item').length <= 4) { // Max 3 in police card
-            html += `
-              <div class="police-item">
-                <div class="police-title">${event.title || 'Ukjent hendelse'}</div>
-                <div class="police-desc">${event.description || ''}</div>
-                <div class="police-time">${fmtDateTime(event.event_time)}</div>
-              </div>
-            `;
-          }
+          const eventId = event.event_id || '';
+          const match = eventId.match(/([a-z0-9]+)\/\d+$/i);
+          const caseId = match ? match[1] : eventId;
           
-          // Add to alerts if within 36 hours and max 2
-          const eventTime = new Date(event.event_time).getTime();
-          if (alertCount < 2 && (now - eventTime) <= alertThreshold) {
-            policeAlerts.push({
-              title: event.category || 'Hendelse',
-              desc: event.description || event.title || '',
-              isPolice: true,
-              severity: 'orange'
-            });
-            alertCount++;
+          if (!caseGroups[caseId]) {
+            caseGroups[caseId] = {
+              title: event.title || 'Ukjent hendelse',
+              category: event.category || 'Hendelse',
+              updates: [],
+              latestTime: event.event_time
+            };
           }
+          caseGroups[caseId].updates.push({
+            desc: event.description || '',
+            time: event.event_time
+          });
+        }
+        
+        // Sort updates chronologically within each case
+        for (const caseId in caseGroups) {
+          caseGroups[caseId].updates.sort((a, b) => new Date(a.time) - new Date(b.time));
+        }
+        
+        // Convert to array and sort by latest update
+        const cases = Object.entries(caseGroups)
+          .map(([id, data]) => ({ id, ...data }))
+          .sort((a, b) => new Date(b.latestTime) - new Date(a.latestTime));
+        
+        // Build police list HTML (max 3 cases)
+        let html = '';
+        for (let i = 0; i < Math.min(cases.length, 3); i++) {
+          const c = cases[i];
+          html += `<div class="police-item">
+            <div class="police-title">${c.title}</div>`;
+          for (const upd of c.updates) {
+            const timeStr = fmtDateTime(upd.time);
+            html += `<div class="police-desc">• ${upd.desc} <span style="color:#666;font-size:0.7rem;">(${timeStr})</span></div>`;
+          }
+          html += `</div>`;
         }
         
         policeList.innerHTML = html;
+        
+        // Add to alert box: only 1 case within 36 hours
+        if (cases.length > 0) {
+          const latestCase = cases[0];
+          const caseTime = new Date(latestCase.latestTime).getTime();
+          
+          if ((now - caseTime) <= alertThreshold) {
+            // Build description with all updates
+            let alertDesc = latestCase.updates.map(u => u.desc).join(' • ');
+            if (alertDesc.length > 150) {
+              alertDesc = alertDesc.substring(0, 147) + '...';
+            }
+            
+            policeAlerts.push({
+              title: latestCase.category,
+              desc: alertDesc,
+              isPolice: true,
+              severity: 'orange'
+            });
+          }
+        }
+        
         updateAlertDisplay();
         
       } catch (err) {
