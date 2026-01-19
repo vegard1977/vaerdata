@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.22 -->
+<!-- Værdata Siljan v1.10.23 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -7,6 +7,7 @@
   <title>Værdata Siljan</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #1a1a2e;
@@ -219,6 +220,8 @@
     .alert-aircraft-link { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.2s; }
     .alert-aircraft-link:hover { background: rgba(96, 165, 250, 0.2); border-radius: 5px; }
     .alert-aircraft-link .alert-title { color: #60a5fa; }
+    .alert-police-link { transition: background 0.2s; }
+    .alert-police-link:hover { background: rgba(245, 158, 11, 0.2); border-radius: 5px; }
     
     /* Water level grid */
     .water-grid {
@@ -905,7 +908,7 @@
 
   <div class="section-title">🚔 Politiloggen Siljan</div>
   <div class="grid">
-    <div class="card police" style="grid-column: 1 / -1;">
+    <div class="card police" id="policeCard" style="grid-column: 1 / -1;">
       <h2>📋 Siste hendelser</h2>
       <div class="police-list" id="policeList">
         <div class="police-item">
@@ -1009,6 +1012,7 @@
     //   v1.10.20 - Reverted to local daylight calculations
     //   v1.10.21 - Police alerts in warning box (max 2, within 36 hours)
     //   v1.10.22 - Police: group updates by case ID (1 case with all updates). Aircraft: 1 fly in alerts
+    //   v1.10.23 - Police alert: click to scroll to police log, show first update + count
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -2002,10 +2006,11 @@
             <div class="alert-desc">${alert.desc}</div>
           </a>`;
         } else if (alert.isPolice) {
-          html += `<div class="alert-item">
+          html += `<a href="#policeCard" class="alert-item alert-police-link" style="display: block; text-decoration: none; color: inherit; cursor: pointer;">
             <div class="alert-title" style="color: #f59e0b;">🚔 ${alert.title}</div>
             <div class="alert-desc">${alert.desc}</div>
-          </div>`;
+            <div style="color: #f59e0b; font-size: 0.75rem; margin-top: 5px;">Se oppdateringer ↓</div>
+          </a>`;
         } else {
           html += `<div class="alert-item">
             <div class="alert-title ${alert.titleClass || ''}">${alert.title}</div>
@@ -2261,14 +2266,18 @@
           const caseTime = new Date(latestCase.latestTime).getTime();
           
           if ((now - caseTime) <= alertThreshold) {
-            // Build description with all updates
-            let alertDesc = latestCase.updates.map(u => u.desc).join(' • ');
-            if (alertDesc.length > 150) {
-              alertDesc = alertDesc.substring(0, 147) + '...';
+            // Show only first update in alert, truncated
+            const firstUpdate = latestCase.updates[0];
+            let alertDesc = firstUpdate ? firstUpdate.desc : '';
+            if (alertDesc.length > 120) {
+              alertDesc = alertDesc.substring(0, 117) + '...';
             }
             
+            // Add update count if multiple
+            const updateCount = latestCase.updates.length;
+            
             policeAlerts.push({
-              title: latestCase.category,
+              title: latestCase.category + (updateCount > 1 ? ` (${updateCount} oppdateringer)` : ''),
               desc: alertDesc,
               isPolice: true,
               severity: 'orange'
