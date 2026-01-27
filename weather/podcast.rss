@@ -16,6 +16,16 @@
     <itunes:explicit>false</itunes:explicit>
 
     <item>
+      <title>Værmelding 27.01.2026 kl 18:00</title>
+      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
+      <pubDate>Tue, 27 Jan 2026 18:00:57 +0100</pubDate>
+      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_27-01-2026_1800.mp3" length="296174" type="audio/mpeg"/>
+      <guid isPermaLink="false">siljan-vaer-27-01-2026_1800</guid>
+      <itunes:duration>180</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+
+    <item>
       <title>Værmelding 27.01.2026 kl 12:00</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
       <pubDate>Tue, 27 Jan 2026 12:00:56 +0100</pubDate>
@@ -211,26 +221,6 @@
       <pubDate>Wed, 21 Jan 2026 07:01:57 +0100</pubDate>
       <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_21-01-2026_0701.mp3" length="295020" type="audio/mpeg"/>
       <guid isPermaLink="false">siljan-vaer-21-01-2026_0701</guid>
-      <itunes:duration>180</itunes:duration>
-      <itunes:explicit>false</itunes:explicit>
-    </item>
-
-    <item>
-      <title>Værmelding 20.01.2026 kl 18:00</title>
-      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
-      <pubDate>Tue, 20 Jan 2026 18:00:56 +0100</pubDate>
-      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_20-01-2026_1800.mp3" length="291559" type="audio/mpeg"/>
-      <guid isPermaLink="false">siljan-vaer-20-01-2026_1800</guid>
-      <itunes:duration>180</itunes:duration>
-      <itunes:explicit>false</itunes:explicit>
-    </item>
-
-    <item>
-      <title>Værmelding 20.01.2026 kl 12:00</title>
-      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
-      <pubDate>Tue, 20 Jan 2026 12:00:56 +0100</pubDate>
-      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_20-01-2026_1200.mp3" length="289823" type="audio/mpeg"/>
-      <guid isPermaLink="false">siljan-vaer-20-01-2026_1200</guid>
       <itunes:duration>180</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
     </item>
