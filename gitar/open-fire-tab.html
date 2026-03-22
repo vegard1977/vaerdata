@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Fire – Solo #1</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --panel: #161616;
+    --border: #2a2a2a;
+    --accent: #e8a020;
+    --accent2: #e04020;
+    --active-bg: #2a1a00;
+    --active-border: #e8a020;
+    --text: #c8c8c8;
+    --dim: #555;
+    --string-color: #444;
+    --note-color: #e8a020;
+    --note-active: #fff;
+    --fret-bg: #1a1a1a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 10px 40px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(232,160,32,0.4);
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    color: var(--dim);
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    padding: 8px 22px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.playing { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn.stop-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .bpm-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  #bpmVal {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    color: var(--accent);
+    min-width: 48px;
+    text-align: center;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 120px;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Beat indicator */
+  .beat-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .beat-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.05s;
+  }
+
+  .beat-dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .beat-dot.one { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+
+  /* Phrase cards */
+  .phrases {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .phrase-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    padding: 10px 14px 14px;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  .phrase-card.active {
+    border-left-color: var(--accent);
+    background: var(--active-bg);
+    box-shadow: 0 0 20px rgba(232,160,32,0.08);
+  }
+
+  .phrase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .phrase-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    color: var(--dim);
+    transition: color 0.15s;
+    min-width: 28px;
+  }
+
+  .phrase-card.active .phrase-num { color: var(--accent); }
+
+  .phrase-label {
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 2px;
+  }
+
+  .phrase-card.active .phrase-label { color: var(--accent); }
+
+  /* TAB display */
+  .tab-block {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--dim);
+    transition: color 0.15s;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .phrase-card.active .tab-block { color: var(--note-active); }
+
+  .tab-line {
+    display: flex;
+    align-items: center;
+  }
+
+  .string-label {
+    color: var(--dim);
+    width: 16px;
+    display: inline-block;
+    font-size: 0.7rem;
+  }
+
+  .phrase-card.active .string-label { color: #888; }
+
+  /* progress bar */
+  .phrase-progress {
+    height: 2px;
+    background: var(--border);
+    margin-top: 8px;
+    border-radius: 1px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .phrase-card.active .phrase-progress { display: block; }
+
+  .phrase-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* fingering hint */
+  .fingering {
+    font-size: 0.6rem;
+    color: #444;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  .phrase-card.active .fingering { color: #777; }
+
+  footer {
+    margin-top: 30px;
+    font-size: 0.6rem;
+    color: #333;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  /* keyboard hint */
+  .key-hint {
+    font-size: 0.62rem;
+    color: #333;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>OPEN FIRE</h1>
+  <div class="subtitle">SOLO #1 &nbsp;·&nbsp; Am &nbsp;·&nbsp; 12th FRET</div>
+</header>
+
+<div class="controls">
+  <button class="btn" id="playBtn" onclick="togglePlay()">PLAY</button>
+  <button class="btn stop-btn" onclick="stopAll()">STOP</button>
+  <div class="bpm-wrap">
+    <span>BPM</span>
+    <input type="range" min="40" max="180" value="80" id="bpmSlider" oninput="updateBpm(this.value)">
+    <span id="bpmVal">80</span>
+  </div>
+</div>
+
+<div class="key-hint">SPACE = play/pause &nbsp;·&nbsp; ESC = stop &nbsp;·&nbsp; CLICK PHRASE = jump</div>
+
+<div class="beat-row" id="beatRow"></div>
+
+<div class="phrases" id="phrases"></div>
+
+<footer>v1.0 · Open Fire Solo #1 · Tab Trainer</footer>
+
+<script>
+// ── TAB DATA ──────────────────────────────────────────────────────────────
+// Each phrase: label, measures (number of bars, each 2 beats), tab lines (e|B|G|D|A|E)
+// Tab strings: index 0=e, 1=B, 2=G, 3=D, 4=A, 5=E
+const phrases = [
+  {
+    num: "INTRO / 1",
+    label: "2 BARS · PICKUP + PHRASE 1",
+    bars: 2,
+    fingering: "3 1  |  1  |  3 1 3 3 1  |  3 1  |  3",
+    tab: [
+      "e|-------7-5-x-6--x-------x-5-x--------7-5------7-(7)--",
+      "B|----------------------------------------------------ww-",
+      "G|-------------------------------------------------------",
+      "D|-------------------------------------------------------",
+      "A|-------------------------------------------------------",
+      "E|-------------------------------------------------------",
+    ]
+  },
+  {
+    num: "2",
+    label: "2 BARS",
+    bars: 2,
+    fingering: "1 3 1 3 3 1 | 3 1 | 3",
+    tab: [
+      "e|--5--7-5------5------7-5-----7-(7)----",
+      "B|--5--7-5-5----5------7-5--------ww----",
+      "G|--------------------------------------",
+      "D|--------------------------------------",
+      "A|--------------------------------------",
+      "E|--------------------------------------",
+    ]
+  },
+  {
+    num: "3",
+    label: "2 BARS · HAMMER-ON",
+    bars: 2,
+    fingering: "1 H 3  |  1 1 3  |  3(2) 3 1 3 1",
+    tab: [
+      "e|--5--7-5-3*---------5----7-7(9)-7---5---7-(5)---",
+      "B|--5--7-5----5-------5----7-7(9)------------ww---",
+      "G|------------------------------------------------",
+      "D|------------------------------------------------",
+      "A|------------------------------------------------",
+      "E|------------------------------------------------",
+    ]
+  },
+  {
+    num: "4",
+    label: "2 BARS",
+    bars: 2,
+    fingering: "3 1  |  3  |  1  |  3  |  1 4 1 4 1",
+    tab: [
+      "e|--7-5---7---7---5-----------ww---",
+      "B|--7-5---7-------5--8-5-8-5-*----",
+      "G|---------------------------------",
+      "D|---------------------------------",
+      "A|---------------------------------",
+      "E|---------------------------------",
+    ]
+  },
+  {
+    num: "5",
+    label: "2 BARS · BENDS",
+    bars: 2,
+    fingering: "3(2) 1  |  3(2) 1 1  |  3(2) 1",
+    tab: [
+      "e|-----5----5----5--------",
+      "B|--7/9--7/9--7/9---------",
+      "G|------------------------",
+      "D|------------------------",
+      "A|------------------------",
+      "E|------------------------",
+    ]
+  },
+  {
+    num: "6",
+    label: "2 BARS · BENDS + PULL-OFF",
+    bars: 2,
+    fingering: "1  |  3(2) 3 1 | 3(2) 3 1 | 3(2) | 3(2) | 4",
+    tab: [
+      "e|--7/9--7-5--8/10-8--5-8/10--8/10-(8)--",
+      "B|---------------------------------------",
+      "G|---------------------------------------",
+      "D|---------------------------------------",
+      "A|---------------------------------------",
+      "E|---------------------------------------",
+    ]
+  },
+  {
+    num: "7",
+    label: "2 BARS",
+    bars: 2,
+    fingering: "1  |  3 3 3  |  3 1 3  |  1 3(2) 3 1",
+    tab: [
+      "e|--5-------5--------7/9--7---5---7-(5)--",
+      "B|--7-7-7-5-7-5-7--x-7/9----------ww----",
+      "G|---------------------------------------",
+      "D|---------------------------------------",
+      "A|---------------------------------------",
+      "E|---------------------------------------",
+    ]
+  },
+  {
+    num: "8",
+    label: "2 BARS",
+    bars: 2,
+    fingering: "3 | 3(2) 3 | 1 3 1 3",
+    tab: [
+      "e|--7---7/9--7---5---7-5-----------",
+      "B|--7---7/9----------7-5---ww------",
+      "G|---------------------------------",
+      "D|---------------------------------",
+      "A|---------------------------------",
+      "E|---------------------------------",
+    ]
+  },
+  {
+    num: "OUTRO",
+    label: "3 BARS · RING + SLIDE",
+    bars: 3,
+    fingering: "1 3 | 1 3 | 3(2) | 4 | 3(2) | 3 1 | 3(2)",
+    tab: [
+      "e|--5-7---(9)---9-7-5--8/10--(10)-(10)---",
+      "B|--5-7-------------------------------ww--",
+      "G|----------------------------------------",
+      "D|----------------------------------------",
+      "A|----------------------------------------",
+      "E|----------------------------------------",
+    ]
+  }
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let isPlaying = false;
+let currentPhrase = 0;
+let beat = 0;
+let totalBeats = 0;
+let phraseBeats = 0;
+let intervalId = null;
+let bpm = 80;
+const BEATS_PER_BAR = 2; // 2 beats per measure (each phrase = bars * 2 beats)
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function click(freq = 880, dur = 0.04, vol = 0.3) {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination);
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  o.start(); o.stop(audioCtx.currentTime + dur);
+}
+
+// ── BUILD UI ──────────────────────────────────────────────────────────────
+function buildUI() {
+  // Beat dots (4 beats shown)
+  const br = document.getElementById('beatRow');
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'beat-dot';
+    d.id = 'dot' + i;
+    br.appendChild(d);
+  }
+
+  const pc = document.getElementById('phrases');
+  phrases.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'phrase-card';
+    card.id = 'phrase' + i;
+    card.onclick = () => jumpTo(i);
+
+    const tabHtml = p.tab.map(line =>
+      `<div class="tab-line"><span class="string-label">${line[0]}|</span>${escHtml(line.slice(2))}</div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="phrase-header">
+        <span class="phrase-num">${p.num}</span>
+        <span class="phrase-label">${p.label}</span>
+      </div>
+      <div class="tab-block">${tabHtml}</div>
+      <div class="fingering">Fingering: ${p.fingering}</div>
+      <div class="phrase-progress"><div class="phrase-progress-fill" id="prog${i}"></div></div>
+    `;
+    pc.appendChild(card);
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── PLAYBACK ──────────────────────────────────────────────────────────────
+function tick() {
+  const p = phrases[currentPhrase];
+  phraseBeats = p.bars * BEATS_PER_BAR;
+
+  // Beat dots
+  document.querySelectorAll('.beat-dot').forEach((d,i) => {
+    d.classList.remove('on','one');
+    if (i === beat % 4) {
+      d.classList.add(beat % 4 === 0 ? 'one' : 'on');
+    }
+  });
+
+  // Click sound
+  if (beat % 4 === 0) click(1100, 0.04, 0.35);
+  else click(660, 0.03, 0.2);
+
+  // Progress bar
+  const fill = document.getElementById('prog' + currentPhrase);
+  if (fill) fill.style.width = ((totalBeats % phraseBeats) / phraseBeats * 100) + '%';
+
+  beat = (beat + 1) % 4;
+  totalBeats++;
+
+  // Advance phrase
+  if (totalBeats % phraseBeats === 0) {
+    currentPhrase = (currentPhrase + 1) % phrases.length;
+    highlight();
+    const fill2 = document.getElementById('prog' + currentPhrase);
+    if (fill2) fill2.style.width = '0%';
+  }
+}
+
+function highlight() {
+  document.querySelectorAll('.phrase-card').forEach((c,i) => {
+    c.classList.toggle('active', i === currentPhrase);
+  });
+  document.getElementById('phrase' + currentPhrase)?.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function togglePlay() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  isPlaying ? pausePlay() : startPlay();
+}
+
+function startPlay() {
+  isPlaying = true;
+  document.getElementById('playBtn').textContent = 'PAUSE';
+  document.getElementById('playBtn').classList.add('playing');
+  highlight();
+  const ms = 60000 / bpm;
+  tick();
+  intervalId = setInterval(tick, ms);
+}
+
+function pausePlay() {
+  isPlaying = false;
+  clearInterval(intervalId);
+  document.getElementById('playBtn').textContent = 'PLAY';
+  document.getElementById('playBtn').classList.remove('playing');
+}
+
+function stopAll() {
+  pausePlay();
+  currentPhrase = 0; beat = 0; totalBeats = 0;
+  document.querySelectorAll('.phrase-card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('on','one'));
+  document.querySelectorAll('[id^="prog"]').forEach(p => p.style.width='0%');
+}
+
+function jumpTo(i) {
+  currentPhrase = i;
+  beat = 0; totalBeats = 0;
+  highlight();
+  if (!isPlaying) {
+    highlight();
+  }
+}
+
+function updateBpm(val) {
+  bpm = parseInt(val);
+  document.getElementById('bpmVal').textContent = bpm;
+  if (isPlaying) {
+    clearInterval(intervalId);
+    const ms = 60000 / bpm;
+    intervalId = setInterval(tick, ms);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'Escape') stopAll();
+});
+
+buildUI();
+</script>
+</body>
+</html>
