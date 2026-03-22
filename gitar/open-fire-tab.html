@@ -4,569 +4,603 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Open Fire – Solo #1</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0e0e0e;
-    --panel: #161616;
-    --border: #2a2a2a;
-    --accent: #e8a020;
-    --accent2: #e04020;
-    --active-bg: #2a1a00;
-    --active-border: #e8a020;
-    --text: #c8c8c8;
-    --dim: #555;
-    --string-color: #444;
-    --note-color: #e8a020;
-    --note-active: #fff;
-    --fret-bg: #1a1a1a;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #111; --surface: #181818; --border: #2a2a2a;
+  --gold: #d4920a; --gold2: #f0b030; --red: #c83020;
+  --text: #bbb; --dim: #555; --string-line: #333;
+  --active-bg: rgba(212,146,10,0.10);
+  --sw: 40px;
+}
+html,body { height:100%; overflow:hidden; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'Courier Prime','Courier New',monospace;
+  display:flex; flex-direction:column;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* HEADER */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 18px; border-bottom:1px solid var(--border);
+  flex-shrink:0; gap:12px; flex-wrap:wrap;
+}
+h1 {
+  font-family:'Bebas Neue',sans-serif; font-size:1.9rem;
+  letter-spacing:5px; color:var(--gold2);
+  text-shadow:0 0 18px rgba(240,176,48,.35); line-height:1;
+}
+.sub { font-size:.62rem; color:var(--dim); letter-spacing:3px; margin-top:2px; }
+.controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.btn {
+  font-family:'Bebas Neue',sans-serif; font-size:.95rem; letter-spacing:2px;
+  padding:5px 16px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); cursor:pointer; transition:all .12s;
+}
+.btn:hover { border-color:var(--gold); color:var(--gold); }
+.btn.on { background:var(--gold); color:#000; border-color:var(--gold2); }
+.btn.red:hover { border-color:var(--red); color:var(--red); }
+.bpm-g { display:flex; align-items:center; gap:7px; font-size:.7rem; color:var(--dim); letter-spacing:1px; }
+#bpmDisp { font-family:'Bebas Neue',sans-serif; font-size:1.25rem; color:var(--gold2); min-width:42px; text-align:right; }
+input[type=range] { -webkit-appearance:none; width:100px; height:2px; background:var(--border); outline:none; cursor:pointer; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; background:var(--gold); cursor:pointer; }
+.beats { display:flex; gap:5px; align-items:center; }
+.bd { width:8px; height:8px; border-radius:50%; background:var(--border); transition:background .05s; }
+.bd.b1 { background:var(--red); box-shadow:0 0 5px var(--red); }
+.bd.b  { background:var(--gold); box-shadow:0 0 5px var(--gold); }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Share Tech Mono', monospace;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 10px 40px;
-  }
+/* LAYOUT */
+.wrap { display:flex; flex:1; overflow:hidden; }
 
-  header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
+/* SIDEBAR */
+.sb {
+  width:70px; flex-shrink:0; border-right:1px solid var(--border);
+  overflow-y:auto; scrollbar-width:none;
+}
+.sb::-webkit-scrollbar { display:none; }
+.plbl {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-bottom:1px solid var(--border); cursor:pointer;
+  transition:background .12s; padding:6px 2px; gap:3px;
+}
+.plbl:hover { background:rgba(212,146,10,.06); }
+.plbl.active { background:var(--active-bg); }
+.plbl .pn {
+  font-family:'Bebas Neue',sans-serif; font-size:1.25rem;
+  color:var(--dim); transition:color .12s; line-height:1;
+}
+.plbl.active .pn { color:var(--gold2); }
+.plbl .pb { font-size:.52rem; color:var(--dim); letter-spacing:1px; text-align:center; }
 
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 3rem;
-    letter-spacing: 6px;
-    color: var(--accent);
-    text-shadow: 0 0 30px rgba(232,160,32,0.4);
-    line-height: 1;
-  }
+/* SCROLL */
+.sc { flex:1; overflow:auto; }
+.sc::-webkit-scrollbar { height:5px; width:5px; }
+.sc::-webkit-scrollbar-track { background:var(--bg); }
+.sc::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
-  .subtitle {
-    font-size: 0.75rem;
-    color: var(--dim);
-    letter-spacing: 3px;
-    margin-top: 4px;
-  }
+/* TAB ROWS */
+.tabsec { display:flex; flex-direction:column; }
+.trow {
+  position:relative; border-bottom:1px solid var(--border);
+  flex-shrink:0; transition:background .12s;
+  padding-bottom:4px;
+}
+.trow.active { background:var(--active-bg); }
 
-  /* Controls */
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+/* beat header */
+.bh {
+  display:flex; align-items:center; height:22px;
+  padding-left:0; font-size:.58rem; color:var(--dim);
+  border-bottom:1px solid var(--border); margin-bottom:2px;
+}
+.bh-name { width:18px; flex-shrink:0; }
+.bc {
+  display:inline-flex; align-items:center; justify-content:center;
+  flex-shrink:0; height:100%;
+}
 
-  .btn {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    padding: 8px 22px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
+/* string rows */
+.srows { display:flex; flex-direction:column; }
+.srow {
+  display:flex; align-items:center; height:24px; position:relative;
+}
+.srow::after {
+  content:''; position:absolute; top:50%; left:18px; right:0;
+  height:1px; background:var(--string-line); z-index:0;
+}
+.sname {
+  width:18px; flex-shrink:0; font-size:.62rem; color:var(--dim);
+  text-align:center; z-index:2; background:var(--bg);
+}
+.trow.active .sname { background:transparent; }
 
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.playing { background: var(--accent); color: #000; border-color: var(--accent); }
-  .btn.stop-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+/* note cells */
+.nc {
+  display:inline-flex; align-items:center; justify-content:center;
+  flex-shrink:0; height:24px; position:relative; z-index:2;
+}
+.nv {
+  font-size:.75rem; font-weight:700; color:var(--gold);
+  background:var(--bg); padding:0 2px; line-height:1;
+  white-space:nowrap; transition:all .08s; border-radius:2px;
+}
+.trow.active .nv { background:transparent; }
+.nv.rest { opacity:0; }
+.nv.lit { color:#000; background:var(--gold2); transform:scale(1.1); }
 
-  .bpm-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.8rem;
-    color: var(--dim);
-    letter-spacing: 1px;
-  }
+/* measure bar lines */
+.mline {
+  position:absolute; top:0; bottom:0; width:1px;
+  background:var(--border); z-index:3; pointer-events:none;
+}
 
-  #bpmVal {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    color: var(--accent);
-    min-width: 48px;
-    text-align: center;
-  }
+/* playhead */
+.ph {
+  position:absolute; top:0; bottom:0; width:2px;
+  background:var(--gold2); opacity:.65; z-index:5;
+  pointer-events:none; display:none;
+  box-shadow:0 0 6px var(--gold2);
+}
+.trow.active .ph { display:block; }
 
-  input[type=range] {
-    -webkit-appearance: none;
-    width: 120px;
-    height: 2px;
-    background: var(--border);
-    outline: none;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-  }
+/* finger */
+.fg { font-size:.55rem; color:#3a3a3a; padding-left:20px; margin-top:2px; letter-spacing:.5px; height:14px; }
 
-  /* Beat indicator */
-  .beat-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-
-  .beat-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--border);
-    transition: background 0.05s;
-  }
-
-  .beat-dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-  .beat-dot.one { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
-
-  /* Phrase cards */
-  .phrases {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    max-width: 900px;
-  }
-
-  .phrase-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-left: 3px solid transparent;
-    padding: 10px 14px 14px;
-    transition: all 0.15s;
-    cursor: pointer;
-  }
-
-  .phrase-card.active {
-    border-left-color: var(--accent);
-    background: var(--active-bg);
-    box-shadow: 0 0 20px rgba(232,160,32,0.08);
-  }
-
-  .phrase-header {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-
-  .phrase-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.3rem;
-    color: var(--dim);
-    transition: color 0.15s;
-    min-width: 28px;
-  }
-
-  .phrase-card.active .phrase-num { color: var(--accent); }
-
-  .phrase-label {
-    font-size: 0.65rem;
-    color: var(--dim);
-    letter-spacing: 2px;
-  }
-
-  .phrase-card.active .phrase-label { color: var(--accent); }
-
-  /* TAB display */
-  .tab-block {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.78rem;
-    line-height: 1.7;
-    color: var(--dim);
-    transition: color 0.15s;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .phrase-card.active .tab-block { color: var(--note-active); }
-
-  .tab-line {
-    display: flex;
-    align-items: center;
-  }
-
-  .string-label {
-    color: var(--dim);
-    width: 16px;
-    display: inline-block;
-    font-size: 0.7rem;
-  }
-
-  .phrase-card.active .string-label { color: #888; }
-
-  /* progress bar */
-  .phrase-progress {
-    height: 2px;
-    background: var(--border);
-    margin-top: 8px;
-    border-radius: 1px;
-    overflow: hidden;
-    display: none;
-  }
-
-  .phrase-card.active .phrase-progress { display: block; }
-
-  .phrase-progress-fill {
-    height: 100%;
-    background: var(--accent);
-    width: 0%;
-    transition: width 0.1s linear;
-  }
-
-  /* fingering hint */
-  .fingering {
-    font-size: 0.6rem;
-    color: #444;
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
-
-  .phrase-card.active .fingering { color: #777; }
-
-  footer {
-    margin-top: 30px;
-    font-size: 0.6rem;
-    color: #333;
-    letter-spacing: 2px;
-    text-align: center;
-  }
-
-  /* keyboard hint */
-  .key-hint {
-    font-size: 0.62rem;
-    color: #333;
-    letter-spacing: 1px;
-    margin-bottom: 16px;
-  }
+/* footer */
+footer { font-size:.58rem; color:#2e2e2e; letter-spacing:1px; padding:3px 18px; border-top:1px solid var(--border); flex-shrink:0; }
 </style>
 </head>
 <body>
-
 <header>
-  <h1>OPEN FIRE</h1>
-  <div class="subtitle">SOLO #1 &nbsp;·&nbsp; Am &nbsp;·&nbsp; 12th FRET</div>
+  <div>
+    <h1>OPEN FIRE</h1>
+    <div class="sub">SOLO #1 · Am · 12th FRET · THE OCTAVE POSITION</div>
+  </div>
+  <div class="controls">
+    <div class="beats" id="beats"></div>
+    <button class="btn" id="playBtn" onclick="togglePlay()">PLAY</button>
+    <button class="btn red" onclick="stopAll()">STOP</button>
+    <div class="bpm-g">
+      BPM
+      <input type="range" id="bpmR" min="40" max="160" value="72" oninput="setBpm(this.value)">
+      <span id="bpmDisp">72</span>
+    </div>
+  </div>
 </header>
 
-<div class="controls">
-  <button class="btn" id="playBtn" onclick="togglePlay()">PLAY</button>
-  <button class="btn stop-btn" onclick="stopAll()">STOP</button>
-  <div class="bpm-wrap">
-    <span>BPM</span>
-    <input type="range" min="40" max="180" value="80" id="bpmSlider" oninput="updateBpm(this.value)">
-    <span id="bpmVal">80</span>
+<div class="wrap">
+  <div class="sb" id="sb"></div>
+  <div class="sc" id="sc">
+    <div class="tabsec" id="ts"></div>
   </div>
 </div>
 
-<div class="key-hint">SPACE = play/pause &nbsp;·&nbsp; ESC = stop &nbsp;·&nbsp; CLICK PHRASE = jump</div>
-
-<div class="beat-row" id="beatRow"></div>
-
-<div class="phrases" id="phrases"></div>
-
-<footer>v1.0 · Open Fire Solo #1 · Tab Trainer</footer>
+<footer>SPACE = play/pause · ESC = stop · CLICK PHRASE NUMBER = jump</footer>
 
 <script>
-// ── TAB DATA ──────────────────────────────────────────────────────────────
-// Each phrase: label, measures (number of bars, each 2 beats), tab lines (e|B|G|D|A|E)
-// Tab strings: index 0=e, 1=B, 2=G, 3=D, 4=A, 5=E
+// ═══════════════════════════════════════════════════
+// DATA
+// slot unit = 1 eighth note
+// s = string index: 0=e, 1=B, 2=G, 3=D, 4=A, 5=E
+// dur = duration in 8th note slots
+// ═══════════════════════════════════════════════════
+const STRINGS = ['e','B','G','D','A','E'];
+const SW = 40; // px per 8th-note slot
+const SN = 18; // string name width px
+
 const phrases = [
-  {
-    num: "INTRO / 1",
-    label: "2 BARS · PICKUP + PHRASE 1",
-    bars: 2,
-    fingering: "3 1  |  1  |  3 1 3 3 1  |  3 1  |  3",
-    tab: [
-      "e|-------7-5-x-6--x-------x-5-x--------7-5------7-(7)--",
-      "B|----------------------------------------------------ww-",
-      "G|-------------------------------------------------------",
-      "D|-------------------------------------------------------",
-      "A|-------------------------------------------------------",
-      "E|-------------------------------------------------------",
-    ]
-  },
-  {
-    num: "2",
-    label: "2 BARS",
-    bars: 2,
-    fingering: "1 3 1 3 3 1 | 3 1 | 3",
-    tab: [
-      "e|--5--7-5------5------7-5-----7-(7)----",
-      "B|--5--7-5-5----5------7-5--------ww----",
-      "G|--------------------------------------",
-      "D|--------------------------------------",
-      "A|--------------------------------------",
-      "E|--------------------------------------",
-    ]
-  },
-  {
-    num: "3",
-    label: "2 BARS · HAMMER-ON",
-    bars: 2,
-    fingering: "1 H 3  |  1 1 3  |  3(2) 3 1 3 1",
-    tab: [
-      "e|--5--7-5-3*---------5----7-7(9)-7---5---7-(5)---",
-      "B|--5--7-5----5-------5----7-7(9)------------ww---",
-      "G|------------------------------------------------",
-      "D|------------------------------------------------",
-      "A|------------------------------------------------",
-      "E|------------------------------------------------",
-    ]
-  },
-  {
-    num: "4",
-    label: "2 BARS",
-    bars: 2,
-    fingering: "3 1  |  3  |  1  |  3  |  1 4 1 4 1",
-    tab: [
-      "e|--7-5---7---7---5-----------ww---",
-      "B|--7-5---7-------5--8-5-8-5-*----",
-      "G|---------------------------------",
-      "D|---------------------------------",
-      "A|---------------------------------",
-      "E|---------------------------------",
-    ]
-  },
-  {
-    num: "5",
-    label: "2 BARS · BENDS",
-    bars: 2,
-    fingering: "3(2) 1  |  3(2) 1 1  |  3(2) 1",
-    tab: [
-      "e|-----5----5----5--------",
-      "B|--7/9--7/9--7/9---------",
-      "G|------------------------",
-      "D|------------------------",
-      "A|------------------------",
-      "E|------------------------",
-    ]
-  },
-  {
-    num: "6",
-    label: "2 BARS · BENDS + PULL-OFF",
-    bars: 2,
-    fingering: "1  |  3(2) 3 1 | 3(2) 3 1 | 3(2) | 3(2) | 4",
-    tab: [
-      "e|--7/9--7-5--8/10-8--5-8/10--8/10-(8)--",
-      "B|---------------------------------------",
-      "G|---------------------------------------",
-      "D|---------------------------------------",
-      "A|---------------------------------------",
-      "E|---------------------------------------",
-    ]
-  },
-  {
-    num: "7",
-    label: "2 BARS",
-    bars: 2,
-    fingering: "1  |  3 3 3  |  3 1 3  |  1 3(2) 3 1",
-    tab: [
-      "e|--5-------5--------7/9--7---5---7-(5)--",
-      "B|--7-7-7-5-7-5-7--x-7/9----------ww----",
-      "G|---------------------------------------",
-      "D|---------------------------------------",
-      "A|---------------------------------------",
-      "E|---------------------------------------",
-    ]
-  },
-  {
-    num: "8",
-    label: "2 BARS",
-    bars: 2,
-    fingering: "3 | 3(2) 3 | 1 3 1 3",
-    tab: [
-      "e|--7---7/9--7---5---7-5-----------",
-      "B|--7---7/9----------7-5---ww------",
-      "G|---------------------------------",
-      "D|---------------------------------",
-      "A|---------------------------------",
-      "E|---------------------------------",
-    ]
-  },
-  {
-    num: "OUTRO",
-    label: "3 BARS · RING + SLIDE",
-    bars: 3,
-    fingering: "1 3 | 1 3 | 3(2) | 4 | 3(2) | 3 1 | 3(2)",
-    tab: [
-      "e|--5-7---(9)---9-7-5--8/10--(10)-(10)---",
-      "B|--5-7-------------------------------ww--",
-      "G|----------------------------------------",
-      "D|----------------------------------------",
-      "A|----------------------------------------",
-      "E|----------------------------------------",
-    ]
-  }
+ {
+  id:'①', bars:2, label:'PHRASE 1',
+  fg:'f: 3  1 · 1 · 3 1 3  3 1 · 3 1 · 3',
+  notes:[
+   // e string: pickup 7-5, x, ⑥(ring), x, 5, x, 7-5, 7, ⑦
+   {s:0,slot:1, fret:'7',   dur:1},
+   {s:0,slot:2, fret:'5',   dur:1},
+   {s:0,slot:3, fret:'x',   dur:1},
+   {s:0,slot:4, fret:'⑥',  dur:2},
+   {s:0,slot:7, fret:'x',   dur:1},
+   {s:0,slot:9, fret:'5',   dur:1},
+   {s:0,slot:10,fret:'x',   dur:1},
+   {s:0,slot:12,fret:'7',   dur:1},
+   {s:0,slot:13,fret:'5',   dur:1},
+   {s:0,slot:15,fret:'7',   dur:1},
+   {s:0,slot:16,fret:'⑦',  dur:3},
+   // B string – vib end
+   {s:1,slot:16,fret:'~~',  dur:3},
+  ]
+ },
+ {
+  id:'②', bars:2, label:'PHRASE 2',
+  fg:'f: 1 3 1 3  3 1 · 3 1 · 3  ww',
+  notes:[
+   {s:0,slot:0, fret:'5',   dur:1},
+   {s:0,slot:2, fret:'7',   dur:1},
+   {s:0,slot:3, fret:'5',   dur:1},
+   {s:0,slot:5, fret:'x',   dur:1},
+   {s:0,slot:6, fret:'⑤',  dur:3},
+   {s:0,slot:10,fret:'7',   dur:1},
+   {s:0,slot:11,fret:'5',   dur:1},
+   {s:0,slot:13,fret:'7',   dur:1},
+   {s:0,slot:14,fret:'⑦',  dur:3},
+   {s:1,slot:0, fret:'5',   dur:1},
+   {s:1,slot:2, fret:'7',   dur:1},
+   {s:1,slot:3, fret:'5',   dur:1},
+   {s:1,slot:14,fret:'~~',  dur:3},
+  ]
+ },
+ {
+  id:'③', bars:2, label:'PHRASE 3 · H',
+  fg:'f: 1 H3 · 1 1 3 · 3(2) 3 1 3 1  ww',
+  notes:[
+   {s:0,slot:1, fret:'5',   dur:1},
+   {s:0,slot:3, fret:'5h7', dur:2},
+   {s:0,slot:5, fret:'3*',  dur:1},
+   {s:0,slot:8, fret:'5',   dur:1},
+   {s:0,slot:10,fret:'⑤',  dur:2},
+   {s:0,slot:13,fret:'7/9', dur:2},
+   {s:0,slot:15,fret:'7',   dur:1},
+   {s:0,slot:16,fret:'5',   dur:1},
+   {s:0,slot:17,fret:'7',   dur:1},
+   {s:0,slot:18,fret:'⑤',  dur:2},
+   {s:1,slot:1, fret:'5',   dur:1},
+   {s:1,slot:3, fret:'5h7', dur:2},
+   {s:1,slot:8, fret:'5',   dur:1},
+   {s:1,slot:10,fret:'⑤',  dur:2},
+   {s:1,slot:18,fret:'~~',  dur:2},
+  ]
+ },
+ {
+  id:'④', bars:2, label:'PHRASE 4',
+  fg:'f: 3 1 · 3 · 1 · 3 · 1 4 1 4 1  ww',
+  notes:[
+   {s:0,slot:0, fret:'7',   dur:1},
+   {s:0,slot:1, fret:'5',   dur:1},
+   {s:0,slot:3, fret:'7',   dur:2},
+   {s:0,slot:5, fret:'7',   dur:1},
+   {s:0,slot:7, fret:'5',   dur:2},
+   {s:1,slot:0, fret:'7',   dur:1},
+   {s:1,slot:1, fret:'5',   dur:1},
+   {s:1,slot:3, fret:'7',   dur:2},
+   {s:1,slot:5, fret:'5',   dur:1},
+   {s:1,slot:8, fret:'8',   dur:1},
+   {s:1,slot:9, fret:'5',   dur:1},
+   {s:1,slot:10,fret:'8',   dur:1},
+   {s:1,slot:11,fret:'5',   dur:1},
+   {s:1,slot:12,fret:'~~',  dur:4},
+  ]
+ },
+ {
+  id:'⑤', bars:2, label:'PHRASE 5 · BENDS',
+  fg:'f: 3(2) 1 · 3(2) 1 1 · 3(2) 1  ww',
+  notes:[
+   {s:0,slot:0, fret:'5',   dur:2},
+   {s:0,slot:4, fret:'5',   dur:2},
+   {s:0,slot:8, fret:'5',   dur:2},
+   {s:0,slot:12,fret:'5',   dur:4},
+   {s:1,slot:0, fret:'7/9', dur:2},
+   {s:1,slot:2, fret:'7',   dur:1},
+   {s:1,slot:4, fret:'7/9', dur:2},
+   {s:1,slot:6, fret:'7',   dur:1},
+   {s:1,slot:7, fret:'7',   dur:1},
+   {s:1,slot:8, fret:'7/9', dur:2},
+   {s:1,slot:12,fret:'~~',  dur:4},
+  ]
+ },
+ {
+  id:'⑥', bars:2, label:'PHRASE 6 · P BENDS',
+  fg:'f: 1 · 3(2) 3 1 · 3(2) 3 1 · 3(2) · 3(2) · 4  ring',
+  notes:[
+   {s:0,slot:0, fret:'7/9', dur:2},
+   {s:0,slot:2, fret:'7',   dur:1},
+   {s:0,slot:4, fret:'7/9', dur:2},
+   {s:0,slot:6, fret:'7',   dur:1},
+   {s:0,slot:7, fret:'5',   dur:1},
+   {s:0,slot:8, fret:'8/10',dur:2},
+   {s:0,slot:10,fret:'8',   dur:1},
+   {s:0,slot:11,fret:'5',   dur:1},
+   {s:0,slot:12,fret:'8/10',dur:2},
+   {s:0,slot:14,fret:'5',   dur:1},
+   {s:0,slot:15,fret:'8/10',dur:2},
+   {s:0,slot:17,fret:'8/10',dur:2},
+   {s:0,slot:19,fret:'⑧',  dur:5},
+  ]
+ },
+ {
+  id:'⑦', bars:2, label:'PHRASE 7',
+  fg:'f: 1 · 3 3 3 · 3 1 3 · 1 3(2) 3 1  ww',
+  notes:[
+   {s:0,slot:0, fret:'5',   dur:2},
+   {s:0,slot:4, fret:'5',   dur:2},
+   {s:0,slot:7, fret:'5',   dur:1},
+   {s:0,slot:9, fret:'7',   dur:1},
+   {s:0,slot:11,fret:'7/9', dur:2},
+   {s:0,slot:13,fret:'7',   dur:1},
+   {s:0,slot:14,fret:'5',   dur:1},
+   {s:0,slot:15,fret:'7',   dur:1},
+   {s:0,slot:16,fret:'⑤',  dur:3},
+   {s:1,slot:0, fret:'7',   dur:2},
+   {s:1,slot:2, fret:'7',   dur:1},
+   {s:1,slot:3, fret:'7',   dur:1},
+   {s:1,slot:4, fret:'5',   dur:1},
+   {s:1,slot:5, fret:'7',   dur:1},
+   {s:1,slot:6, fret:'x',   dur:1},
+   {s:1,slot:16,fret:'~~',  dur:3},
+  ]
+ },
+ {
+  id:'⑧', bars:2, label:'PHRASE 8',
+  fg:'f: 3 · 3(2) 3 · 1 3 1 3  ww',
+  notes:[
+   {s:0,slot:0, fret:'7',   dur:2},
+   {s:0,slot:3, fret:'7/9', dur:2},
+   {s:0,slot:5, fret:'7',   dur:1},
+   {s:0,slot:7, fret:'5',   dur:1},
+   {s:0,slot:9, fret:'7',   dur:1},
+   {s:0,slot:10,fret:'5',   dur:2},
+   {s:1,slot:0, fret:'7',   dur:2},
+   {s:1,slot:3, fret:'7/9', dur:2},
+   {s:1,slot:10,fret:'~~',  dur:4},
+  ]
+ },
+ {
+  id:'OUT', bars:3, label:'OUTRO · 3 bars',
+  fg:'f: 1 3 · ⑨(ring) · 9 7 5 · 8/10 · ⑩(ring) · slide up',
+  notes:[
+   {s:0,slot:0, fret:'5',   dur:1},
+   {s:0,slot:1, fret:'7',   dur:2},
+   {s:0,slot:4, fret:'⑨',  dur:4},
+   {s:0,slot:8, fret:'9',   dur:1},
+   {s:0,slot:9, fret:'7',   dur:1},
+   {s:0,slot:10,fret:'5',   dur:1},
+   {s:0,slot:12,fret:'8/10',dur:4},
+   {s:0,slot:16,fret:'⑩',  dur:4},
+   {s:0,slot:20,fret:'⑩/',  dur:4},
+   {s:1,slot:0, fret:'5',   dur:1},
+   {s:1,slot:1, fret:'7',   dur:2},
+   {s:1,slot:20,fret:'~~',  dur:4},
+  ]
+ },
 ];
 
-// ── STATE ──────────────────────────────────────────────────────────────────
-let isPlaying = false;
-let currentPhrase = 0;
-let beat = 0;
-let totalBeats = 0;
-let phraseBeats = 0;
-let intervalId = null;
-let bpm = 80;
-const BEATS_PER_BAR = 2; // 2 beats per measure (each phrase = bars * 2 beats)
-
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function click(freq = 880, dur = 0.04, vol = 0.3) {
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.connect(g); g.connect(audioCtx.destination);
-  o.frequency.value = freq;
-  g.gain.setValueAtTime(vol, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-  o.start(); o.stop(audioCtx.currentTime + dur);
+// ═══════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════
+const AC = new (window.AudioContext||window.webkitAudioContext)();
+function beep(f,v=.2,d=.04){
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.frequency.value=f;
+  g.gain.setValueAtTime(v,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);
+  o.start();o.stop(AC.currentTime+d);
 }
 
-// ── BUILD UI ──────────────────────────────────────────────────────────────
-function buildUI() {
-  // Beat dots (4 beats shown)
-  const br = document.getElementById('beatRow');
-  for (let i = 0; i < 4; i++) {
-    const d = document.createElement('div');
-    d.className = 'beat-dot';
-    d.id = 'dot' + i;
-    br.appendChild(d);
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let playing=false, bpm=72, curP=0, curSl=0, tid=null;
+const msSlot=()=>(60000/bpm)/2;
+
+// ═══════════════════════════════════════════════════
+// BUILD
+// ═══════════════════════════════════════════════════
+function build(){
+  // beat dots (16: 2 bars of 8th-note ticks)
+  const bd=document.getElementById('beats');
+  for(let i=0;i<8;i++){
+    const d=document.createElement('div');
+    d.className='bd';d.id='bd'+i;bd.appendChild(d);
   }
 
-  const pc = document.getElementById('phrases');
-  phrases.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'phrase-card';
-    card.id = 'phrase' + i;
-    card.onclick = () => jumpTo(i);
+  const sb=document.getElementById('sb');
+  const ts=document.getElementById('ts');
 
-    const tabHtml = p.tab.map(line =>
-      `<div class="tab-line"><span class="string-label">${line[0]}|</span>${escHtml(line.slice(2))}</div>`
-    ).join('');
+  phrases.forEach((p,pi)=>{
+    const slots=p.bars*8;
+    const rowW=SN+slots*SW+4;
 
-    card.innerHTML = `
-      <div class="phrase-header">
-        <span class="phrase-num">${p.num}</span>
-        <span class="phrase-label">${p.label}</span>
-      </div>
-      <div class="tab-block">${tabHtml}</div>
-      <div class="fingering">Fingering: ${p.fingering}</div>
-      <div class="phrase-progress"><div class="phrase-progress-fill" id="prog${i}"></div></div>
-    `;
-    pc.appendChild(card);
-  });
-}
+    // Sidebar
+    const lbl=document.createElement('div');
+    lbl.className='plbl';lbl.id='lbl'+pi;
+    lbl.style.height=(6+22+p.bars*24*6/5+14+4+18)+'px'; // approx match row
+    lbl.innerHTML=`<div class="pn">${p.id}</div><div class="pb">${p.bars}B</div>`;
+    lbl.onclick=()=>jumpTo(pi);
+    sb.appendChild(lbl);
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    // Tab row
+    const row=document.createElement('div');
+    row.className='trow';row.id='row'+pi;
 
-// ── PLAYBACK ──────────────────────────────────────────────────────────────
-function tick() {
-  const p = phrases[currentPhrase];
-  phraseBeats = p.bars * BEATS_PER_BAR;
-
-  // Beat dots
-  document.querySelectorAll('.beat-dot').forEach((d,i) => {
-    d.classList.remove('on','one');
-    if (i === beat % 4) {
-      d.classList.add(beat % 4 === 0 ? 'one' : 'on');
+    // Beat header
+    const bh=document.createElement('div');
+    bh.className='bh';
+    bh.style.width=rowW+'px';
+    let bhh=`<span class="bh-name"></span>`;
+    for(let sl=0;sl<slots;sl++){
+      const dn=sl%2===0;
+      const bn=Math.floor(sl/2)%4+1;
+      const label=dn?bn:'&';
+      const col=sl===0?'color:var(--gold2)':dn?'color:var(--dim)':'color:#2a2a2a';
+      bhh+=`<span class="bc" style="width:${SW}px;${col}">${label}</span>`;
     }
+    bh.innerHTML=bhh;
+
+    // Measure lines
+    for(let m=0;m<=p.bars;m++){
+      const ml=document.createElement('div');
+      ml.className='mline';
+      ml.style.left=(SN+m*8*SW)+'px';
+      row.appendChild(ml);
+    }
+
+    // String rows
+    const srows=document.createElement('div');
+    srows.className='srows';
+
+    STRINGS.forEach((sn,si)=>{
+      const srow=document.createElement('div');
+      srow.className='srow';
+      srow.style.width=rowW+'px';
+
+      let html=`<span class="sname">${sn}</span>`;
+
+      // build note map
+      const nm={};
+      p.notes.filter(n=>n.s===si).forEach(n=>nm[n.slot]=n);
+
+      for(let sl=0;sl<slots;sl++){
+        const n=nm[sl];
+        if(n){
+          const w=n.dur*SW;
+          html+=`<span class="nc" style="width:${w}px"><span class="nv" id="nv_${pi}_${si}_${sl}">${n.fret}</span></span>`;
+        } else {
+          // check if covered by earlier note
+          let cov=false;
+          for(let prev=0;prev<sl;prev++){
+            const pn=nm[prev];
+            if(pn&&prev+pn.dur>sl){cov=true;break;}
+          }
+          if(!cov){
+            html+=`<span class="nc" style="width:${SW}px"><span class="nv rest">·</span></span>`;
+          }
+        }
+      }
+      srow.innerHTML=html;
+      srows.appendChild(srow);
+    });
+
+    // Fingering
+    const fg=document.createElement('div');
+    fg.className='fg';
+    fg.textContent=p.fg;
+    fg.style.width=rowW+'px';
+
+    // Playhead
+    const ph=document.createElement('div');
+    ph.className='ph';ph.id='ph'+pi;
+    ph.style.left=SN+'px';
+
+    row.appendChild(bh);
+    row.appendChild(srows);
+    row.appendChild(fg);
+    row.appendChild(ph);
+    ts.appendChild(row);
   });
 
-  // Click sound
-  if (beat % 4 === 0) click(1100, 0.04, 0.35);
-  else click(660, 0.03, 0.2);
+  // sync sidebar heights after render
+  requestAnimationFrame(syncSb);
+}
 
-  // Progress bar
-  const fill = document.getElementById('prog' + currentPhrase);
-  if (fill) fill.style.width = ((totalBeats % phraseBeats) / phraseBeats * 100) + '%';
+function syncSb(){
+  phrases.forEach((_,pi)=>{
+    const rh=document.getElementById('row'+pi)?.offsetHeight||120;
+    const lbl=document.getElementById('lbl'+pi);
+    if(lbl) lbl.style.height=rh+'px';
+  });
+}
 
-  beat = (beat + 1) % 4;
-  totalBeats++;
+// ═══════════════════════════════════════════════════
+// PLAYBACK
+// ═══════════════════════════════════════════════════
+let litIds=[];
 
-  // Advance phrase
-  if (totalBeats % phraseBeats === 0) {
-    currentPhrase = (currentPhrase + 1) % phrases.length;
-    highlight();
-    const fill2 = document.getElementById('prog' + currentPhrase);
-    if (fill2) fill2.style.width = '0%';
+function tick(){
+  if(AC.state==='suspended')AC.resume();
+  const p=phrases[curP];
+  const slots=p.bars*8;
+
+  // beat dots
+  const bl=curSl%8;
+  document.querySelectorAll('.bd').forEach((d,i)=>{
+    d.classList.remove('b1','b');
+    if(i===bl)d.classList.add(bl===0?'b1':'b');
+  });
+
+  // click
+  if(curSl%8===0) beep(1200,.3,.04);
+  else if(curSl%2===0) beep(700,.12,.03);
+
+  // highlight notes
+  litIds.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('lit');});
+  litIds=[];
+  STRINGS.forEach((_,si)=>{
+    p.notes.filter(n=>n.s===si&&n.slot<=curSl&&n.slot+n.dur>curSl).forEach(n=>{
+      const id=`nv_${curP}_${si}_${n.slot}`;
+      const el=document.getElementById(id);
+      if(el){el.classList.add('lit');litIds.push(id);}
+    });
+  });
+
+  // playhead
+  const ph=document.getElementById('ph'+curP);
+  if(ph) ph.style.left=(SN+curSl*SW)+'px';
+
+  curSl++;
+  if(curSl>=slots){
+    curSl=0;
+    curP=(curP+1)%phrases.length;
+    setAct(curP);
   }
 }
 
-function highlight() {
-  document.querySelectorAll('.phrase-card').forEach((c,i) => {
-    c.classList.toggle('active', i === currentPhrase);
-  });
-  document.getElementById('phrase' + currentPhrase)?.scrollIntoView({behavior:'smooth', block:'nearest'});
+function setAct(pi){
+  document.querySelectorAll('.trow').forEach((r,i)=>r.classList.toggle('active',i===pi));
+  document.querySelectorAll('.plbl').forEach((l,i)=>l.classList.toggle('active',i===pi));
+  document.getElementById('row'+pi)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // sync sb scroll
+  const lbl=document.getElementById('lbl'+pi);
+  if(lbl) lbl.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function togglePlay() {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  isPlaying ? pausePlay() : startPlay();
+function togglePlay(){
+  if(AC.state==='suspended')AC.resume();
+  playing?pause():play();
 }
-
-function startPlay() {
-  isPlaying = true;
-  document.getElementById('playBtn').textContent = 'PAUSE';
-  document.getElementById('playBtn').classList.add('playing');
-  highlight();
-  const ms = 60000 / bpm;
+function play(){
+  playing=true;
+  document.getElementById('playBtn').textContent='PAUSE';
+  document.getElementById('playBtn').classList.add('on');
+  setAct(curP);
   tick();
-  intervalId = setInterval(tick, ms);
+  tid=setInterval(tick,msSlot());
 }
-
-function pausePlay() {
-  isPlaying = false;
-  clearInterval(intervalId);
-  document.getElementById('playBtn').textContent = 'PLAY';
-  document.getElementById('playBtn').classList.remove('playing');
+function pause(){
+  playing=false;clearInterval(tid);
+  document.getElementById('playBtn').textContent='PLAY';
+  document.getElementById('playBtn').classList.remove('on');
 }
-
-function stopAll() {
-  pausePlay();
-  currentPhrase = 0; beat = 0; totalBeats = 0;
-  document.querySelectorAll('.phrase-card').forEach(c => c.classList.remove('active'));
-  document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('on','one'));
-  document.querySelectorAll('[id^="prog"]').forEach(p => p.style.width='0%');
+function stopAll(){
+  pause();curP=0;curSl=0;
+  litIds.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('lit');});
+  litIds=[];
+  document.querySelectorAll('.trow').forEach(r=>r.classList.remove('active'));
+  document.querySelectorAll('.plbl').forEach(l=>l.classList.remove('active'));
+  document.querySelectorAll('.bd').forEach(d=>d.classList.remove('b1','b'));
+  phrases.forEach((_,pi)=>{
+    const ph=document.getElementById('ph'+pi);
+    if(ph)ph.style.left=SN+'px';
+  });
 }
-
-function jumpTo(i) {
-  currentPhrase = i;
-  beat = 0; totalBeats = 0;
-  highlight();
-  if (!isPlaying) {
-    highlight();
+function jumpTo(pi){
+  curP=pi;curSl=0;setAct(pi);
+  if(!playing){
+    litIds.forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('lit');});
+    litIds=[];
   }
 }
-
-function updateBpm(val) {
-  bpm = parseInt(val);
-  document.getElementById('bpmVal').textContent = bpm;
-  if (isPlaying) {
-    clearInterval(intervalId);
-    const ms = 60000 / bpm;
-    intervalId = setInterval(tick, ms);
-  }
+function setBpm(v){
+  bpm=parseInt(v);
+  document.getElementById('bpmDisp').textContent=bpm;
+  if(playing){clearInterval(tid);tid=setInterval(tick,msSlot());}
 }
-
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-  if (e.code === 'Escape') stopAll();
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();togglePlay();}
+  if(e.code==='Escape')stopAll();
 });
 
-buildUI();
+build();
 </script>
 </body>
 </html>
