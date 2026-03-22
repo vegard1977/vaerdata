@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badetemperatur – Siljan kommune</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            background: #0b1d2e;
+            color: #e8f0f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(0,119,182,0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 80%, rgba(0,180,216,0.08) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 48px 36px 40px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.7em;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #4cc9f0;
+            background: rgba(76,201,240,0.1);
+            border: 1px solid rgba(76,201,240,0.2);
+            border-radius: 100px;
+            padding: 6px 16px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .location {
+            font-size: 0.9em;
+            color: rgba(232,240,246,0.5);
+            margin-bottom: 32px;
+        }
+
+        .temp-ring {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 28px;
+        }
+
+        .temp-ring svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .temp-ring .bg-ring {
+            fill: none;
+            stroke: rgba(255,255,255,0.06);
+            stroke-width: 6;
+        }
+
+        .temp-ring .value-ring {
+            fill: none;
+            stroke: url(#tempGradient);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 565;
+            stroke-dashoffset: 565;
+            transition: stroke-dashoffset 1.2s ease-out;
+        }
+
+        .temp-value {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .temp-number {
+            font-family: 'DM Mono', monospace;
+            font-size: 3.2em;
+            font-weight: 400;
+            line-height: 1;
+            color: #fff;
+        }
+
+        .temp-unit {
+            font-size: 0.3em;
+            color: rgba(232,240,246,0.5);
+            vertical-align: super;
+        }
+
+        .temp-label {
+            font-size: 0.8em;
+            color: rgba(232,240,246,0.4);
+            margin-top: 4px;
+        }
+
+        .status {
+            font-size: 0.8em;
+            color: rgba(232,240,246,0.4);
+            margin-bottom: 24px;
+            min-height: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #0077b6, #00b4d8);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 16px 32px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.15s, opacity 0.15s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover { transform: translateY(-1px); }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .error {
+            color: #f4845f;
+            font-size: 0.8em;
+            margin-top: 16px;
+            min-height: 20px;
+        }
+
+        .info {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.75em;
+            color: rgba(232,240,246,0.3);
+            line-height: 1.6;
+        }
+
+        .info a {
+            color: rgba(76,201,240,0.6);
+            text-decoration: none;
+        }
+
+        .wave {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 120px;
+            z-index: 0;
+            opacity: 0.15;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card { animation: fadeIn 0.6s ease-out; }
+
+        .not-supported {
+            background: rgba(244,132,95,0.1);
+            border: 1px solid rgba(244,132,95,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+            color: #f4845f;
+        }
+    </style>
+</head>
+<body>
+
+<svg style="position:absolute;width:0;height:0;">
+    <defs>
+        <linearGradient id="tempGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0077b6"/>
+            <stop offset="50%" stop-color="#00b4d8"/>
+            <stop offset="100%" stop-color="#4cc9f0"/>
+        </linearGradient>
+    </defs>
+</svg>
+
+<svg class="wave" viewBox="0 0 1440 120" preserveAspectRatio="none">
+    <path d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,40 1440,60 L1440,120 L0,120 Z" fill="rgba(0,119,182,0.3)"/>
+    <path d="M0,80 C240,40 480,100 720,60 C960,20 1200,80 1440,50 L1440,120 L0,120 Z" fill="rgba(0,180,216,0.2)"/>
+</svg>
+
+<div class="card">
+    <div class="badge">Siljan kommune</div>
+    <h1>Badetemperatur</h1>
+    <div class="location" id="location">Trykk for å måle vannet</div>
+
+    <div id="notSupported" style="display:none;" class="not-supported">
+        Nettleseren din støtter ikke Bluetooth.<br>
+        Bruk <strong>Chrome på Android</strong> for å måle direkte.
+    </div>
+
+    <div class="temp-ring">
+        <svg viewBox="0 0 200 200">
+            <circle class="bg-ring" cx="100" cy="100" r="90"/>
+            <circle class="value-ring" id="ring" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="temp-value">
+            <div class="temp-number" id="tempNumber">--<span class="temp-unit">°C</span></div>
+            <div class="temp-label" id="tempLabel">vanntemperatur</div>
+        </div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <button id="readBtn" onclick="readTemperature()">Mål temperatur</button>
+
+    <div class="error" id="error"></div>
+
+    <div class="info">
+        Sensoren måler vanntemperaturen via Bluetooth.<br>
+        Krever Chrome på Android. <a href="https://siljan.kommune.no">siljan.kommune.no</a>
+    </div>
+</div>
+
+<script>
+    // ---- BLE UUIDs ----
+    const ESS_UUID = 0x181A;
+    const TEMP_UUID = 0x2A6E;
+
+    // ---- Oppdater temperatur-ring (0-35 grader range) ----
+    function updateRing(tempC) {
+        const ring = document.getElementById('ring');
+        const circumference = 2 * Math.PI * 90; // r=90
+        const minTemp = 0;
+        const maxTemp = 35;
+        const clamped = Math.max(minTemp, Math.min(maxTemp, tempC));
+        const pct = (clamped - minTemp) / (maxTemp - minTemp);
+        ring.style.strokeDashoffset = circumference * (1 - pct);
+    }
+
+    // ---- Les temperatur via BLE ----
+    async function readTemperature() {
+        const btn = document.getElementById('readBtn');
+        const status = document.getElementById('status');
+        const tempNumber = document.getElementById('tempNumber');
+        const tempLabel = document.getElementById('tempLabel');
+        const location = document.getElementById('location');
+        const error = document.getElementById('error');
+
+        error.textContent = '';
+        btn.disabled = true;
+        status.textContent = 'Søker etter sensor...';
+
+        try {
+            const device = await navigator.bluetooth.requestDevice({
+                filters: [{ services: [ESS_UUID] }],
+                optionalServices: [ESS_UUID]
+            });
+
+            status.textContent = 'Kobler til ' + device.name + '...';
+            location.textContent = device.name || 'Badeplass';
+
+            const server = await device.gatt.connect();
+
+            status.textContent = 'Leser temperatur...';
+            const service = await server.getPrimaryService(ESS_UUID);
+            const characteristic = await service.getCharacteristic(TEMP_UUID);
+            const value = await characteristic.readValue();
+
+            // ESS: sint16 i 0.01°C, little-endian
+            const raw = value.getInt16(0, true);
+            const tempC = raw / 100;
+
+            tempNumber.innerHTML = tempC.toFixed(1) + '<span class="temp-unit">°C</span>';
+            updateRing(tempC);
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('no-NO', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            status.textContent = 'Målt kl. ' + timeStr;
+
+            if (tempC < 15) {
+                tempLabel.textContent = 'Friskt! 🥶';
+            } else if (tempC < 20) {
+                tempLabel.textContent = 'Behagelig 😊';
+            } else if (tempC < 25) {
+                tempLabel.textContent = 'Deilig! ☀️';
+            } else {
+                tempLabel.textContent = 'Tropisk! 🏖️';
+            }
+
+            server.disconnect();
+
+        } catch (e) {
+            if (e.name === 'NotFoundError') {
+                error.textContent = 'Fant ingen sensor i nærheten. Er du ved badeplassen?';
+            } else if (e.name === 'SecurityError') {
+                error.textContent = 'Bluetooth-tilgang ble avslått. Prøv igjen.';
+            } else {
+                error.textContent = 'Kunne ikke lese sensor: ' + e.message;
+            }
+            status.textContent = '';
+        }
+
+        btn.disabled = false;
+    }
+
+    // ---- Sjekk Web Bluetooth-støtte ----
+    if (!navigator.bluetooth) {
+        document.getElementById('notSupported').style.display = 'block';
+        document.getElementById('readBtn').disabled = true;
+        document.getElementById('status').textContent = '';
+    }
+</script>
+</body>
+</html>
