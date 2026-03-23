@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badetemperatur Øverbøtjønna – Siljan kommune</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+    <!-- v0.5 Changelog:
+         v0.5 - Lokasjon: Øverbøtjønna
+              - Tilpasset for iframe-embedding på siljan.kommune.no
+              - Filnavn: badetemp-overbotjonna.html
+         v0.4 - Siljan kommune grønn fargeprofil (fra siljan.kommune.no)
+              - Offisiell logo fra siljan.kommune.no
+              - Supabase usynlig push ved BLE-avlesning
+              - iOS/Safari fallback: henter siste verdi fra Supabase
+              - Forbedret BLE-deteksjon og feilhåndtering
+              - QR-kode (placeholder) for utskrift
+              - Disclaimer i footer
+         v0.3 - Kommunevåpen SVG, temperaturring, QR-kode
+         v0.2 - BLE ESS UUID 0x181A, temperatur UUID 0x2A6E
+         v0.1 - Første prototype med Web Bluetooth
+    -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --sk-green-dark: #1a4d2e;
+            --sk-green: #2d6a4f;
+            --sk-green-mid: #40916c;
+            --sk-green-light: #52b788;
+            --sk-green-pale: #95d5b2;
+            --sk-bg: #0f2b1a;
+            --sk-text: #e8f0ea;
+            --sk-text-dim: rgba(232,240,234,0.5);
+            --sk-text-faint: rgba(232,240,234,0.3);
+            --sk-surface: rgba(255,255,255,0.04);
+            --sk-border: rgba(255,255,255,0.08);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            background: var(--sk-bg);
+            color: var(--sk-text);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 24px; overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(45,106,79,0.15) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 80%, rgba(82,183,136,0.06) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .card {
+            position: relative; z-index: 1;
+            background: var(--sk-surface);
+            border: 1px solid var(--sk-border);
+            border-radius: 20px;
+            padding: 36px 32px 28px;
+            max-width: 380px; width: 100%;
+            text-align: center;
+        }
+
+        .logo-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 12px; margin-bottom: 24px;
+        }
+        .kommune-logo {
+            width: 40px; height: 40px;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        }
+        .kommune-text { text-align: left; }
+        .kommune-name { font-size: 1.05em; font-weight: 700; letter-spacing: -0.01em; }
+        .kommune-sub { font-size: 0.72em; color: var(--sk-text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        h1 { font-size: 1.45em; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em; }
+        .location { font-size: 0.88em; color: var(--sk-text-dim); margin-bottom: 28px; }
+
+        /* Temperatur-ring */
+        .temp-ring { position: relative; width: 200px; height: 200px; margin: 0 auto 20px; }
+        .temp-ring > svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+        .bg-ring { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 6; }
+        .value-ring { fill: none; stroke: url(#tg); stroke-width: 6; stroke-linecap: round;
+                      stroke-dasharray: 565; stroke-dashoffset: 565; transition: stroke-dashoffset 1.2s ease-out; }
+        .temp-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .temp-number { font-family: 'DM Mono', monospace; font-size: 3.2em; font-weight: 400; line-height: 1; color: #fff; }
+        .temp-unit { font-size: 0.3em; color: var(--sk-text-dim); vertical-align: super; }
+        .temp-label { font-size: 0.78em; color: var(--sk-text-faint); margin-top: 4px; }
+
+        .status { font-size: 0.78em; color: var(--sk-text-dim); margin-bottom: 20px; min-height: 20px; }
+
+        /* Knapper */
+        button {
+            background: linear-gradient(135deg, var(--sk-green-dark), var(--sk-green));
+            color: white; border: none; border-radius: 14px; padding: 16px 32px;
+            font-family: 'DM Sans', sans-serif; font-size: 1em; font-weight: 600;
+            cursor: pointer; width: 100%;
+            transition: transform 0.15s, opacity 0.15s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-top: 10px; box-shadow: none;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+        .error { color: #e07050; font-size: 0.78em; margin-top: 14px; min-height: 20px; }
+
+        .info-box {
+            background: rgba(82,183,136,0.08); border: 1px solid rgba(82,183,136,0.15);
+            border-radius: 12px; padding: 14px; margin-bottom: 20px;
+            font-size: 0.8em; color: var(--sk-text-dim); line-height: 1.5;
+        }
+
+        .divider { border: none; border-top: 1px solid var(--sk-border); margin: 24px 0 18px; }
+
+        /* QR */
+        .qr-section { text-align: center; }
+        .qr-label { font-size: 0.72em; color: var(--sk-text-faint); margin-bottom: 10px; }
+        .qr-code { display: inline-block; background: white; padding: 8px; border-radius: 8px; }
+        .qr-code svg { display: block; }
+
+        /* Footer */
+        .footer { font-size: 0.68em; color: var(--sk-text-faint); margin-top: 16px; line-height: 1.5; }
+        .footer a { color: var(--sk-green-pale); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Wave */
+        .wave { position: fixed; bottom: 0; left: 0; right: 0; height: 100px; z-index: 0; opacity: 0.12; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .card { animation: fadeIn 0.6s ease-out; }
+    </style>
+</head>
+<body>
+
+<!-- Gradient definisjon -->
+<svg style="position:absolute;width:0;height:0;">
+    <defs>
+        <linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1a4d2e"/>
+            <stop offset="50%" stop-color="#2d6a4f"/>
+            <stop offset="100%" stop-color="#52b788"/>
+        </linearGradient>
+    </defs>
+</svg>
+
+<!-- Bølge-dekorasjon -->
+<svg class="wave" viewBox="0 0 1440 100" preserveAspectRatio="none">
+    <path d="M0,50 C360,100 720,0 1080,50 C1260,75 1380,30 1440,50 L1440,100 L0,100 Z" fill="rgba(45,106,79,0.4)"/>
+    <path d="M0,70 C240,30 480,90 720,50 C960,10 1200,70 1440,40 L1440,100 L0,100 Z" fill="rgba(82,183,136,0.2)"/>
+</svg>
+
+<div class="card">
+    <div class="logo-row">
+        <img class="kommune-logo"
+             src="https://www.siljan.kommune.no/external/ssp/inter-v2/prod/files/img/siljan-logo.svg"
+             alt="Siljan kommunevåpen"
+             onerror="this.style.display='none'">
+        <div class="kommune-text">
+            <div class="kommune-name">Siljan kommune</div>
+            <div class="kommune-sub">Badetemperatur</div>
+        </div>
+    </div>
+
+    <h1 id="heading">Øverbøtjønna</h1>
+    <div class="location" id="location">Trykk for å måle vanntemperaturen</div>
+
+    <div id="infoBox" style="display:none;" class="info-box"></div>
+
+    <div class="temp-ring">
+        <svg viewBox="0 0 200 200">
+            <circle class="bg-ring" cx="100" cy="100" r="90"/>
+            <circle class="value-ring" id="ring" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="temp-value">
+            <div class="temp-number" id="tempNumber">--<span class="temp-unit">°C</span></div>
+            <div class="temp-label" id="tempLabel">vanntemperatur</div>
+        </div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <button id="readBtn" onclick="readTemperature()">Mål temperatur</button>
+    <button id="lastBtn" class="btn-secondary" onclick="fetchLast()" style="display:none;">Vis sist registrerte temperatur</button>
+
+    <div class="error" id="error"></div>
+
+    <hr class="divider">
+
+    <div class="qr-section">
+        <div class="qr-label">Skann for å åpne på din telefon</div>
+        <div class="qr-code">
+            <!-- QR-kode placeholder — bytt med generert SVG for produksjon -->
+            <svg viewBox="0 0 140 140" width="120" height="120">
+                <rect width="140" height="140" fill="white"/>
+                <text x="70" y="75" font-size="10" text-anchor="middle" fill="#999" font-family="sans-serif">QR-kode</text>
+            </svg>
+        </div>
+    </div>
+
+    <div class="footer">
+        Veiledende temperatur. Kan avvike fra faktisk vanntemperatur.<br>
+        <a href="https://siljan.kommune.no">siljan.kommune.no</a> &bull; Badetemperatur v0.5
+    </div>
+</div>
+
+<script>
+// ========================================
+// Siljan Badetemperatur v0.4
+// BLE + Supabase push/read
+// ========================================
+
+const ESS_UUID = 0x181A;
+const TEMP_UUID = 0x2A6E;
+
+const SUPA_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
+const SUPA_ANON = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
+
+const hasBLE = !!(navigator.bluetooth);
+
+// --- UI-oppdatering ---
+
+function updRing(temp) {
+    const ring = document.getElementById('ring');
+    const circumference = 2 * Math.PI * 90;
+    const clamped = Math.max(0, Math.min(35, temp));
+    ring.style.strokeDashoffset = circumference * (1 - clamped / 35);
+}
+
+function updText(temp) {
+    const h = document.getElementById('heading');
+    const l = document.getElementById('tempLabel');
+    const loc = document.getElementById('location');
+    loc.textContent = 'Øverbøtjønna';
+    if (temp < 10)      { h.textContent = 'Iskaldt!';    l.textContent = 'Kun for de tøffeste'; }
+    else if (temp < 15) { h.textContent = 'Friskt!';     l.textContent = 'Forfriskende bad'; }
+    else if (temp < 18) { h.textContent = 'Behagelig';   l.textContent = 'Fint badevann'; }
+    else if (temp < 22) { h.textContent = 'Deilig!';     l.textContent = 'Perfekt badetemperatur'; }
+    else                { h.textContent = 'Tropisk!';    l.textContent = 'Hopp rett uti!'; }
+}
+
+function showTemp(temp, timeStr, source) {
+    document.getElementById('tempNumber').innerHTML =
+        temp.toFixed(1) + '<span class="temp-unit">°C</span>';
+    updRing(temp);
+    updText(temp);
+    const prefix = source === 'ble' ? 'Målt' : 'Sist registrert';
+    document.getElementById('status').textContent = prefix + ' ' + timeStr;
+}
+
+// --- Supabase: usynlig push ---
+
+async function pushToSupa(sensorId, temp) {
+    try {
+        await fetch(SUPA_URL + '/rest/v1/badetemperatur', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': SUPA_ANON,
+                'Authorization': 'Bearer ' + SUPA_ANON,
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                sensor_id: sensorId,
+                temperatur: temp,
+                kilde: 'web_bluetooth'
+            })
+        });
+    } catch (e) {
+        // Stille feil — ikke vis til bruker
+        console.log('Supabase push feilet:', e.message);
+    }
+}
+
+// --- Supabase: hent siste registrering ---
+
+async function fetchLast() {
+    const status = document.getElementById('status');
+    const error = document.getElementById('error');
+    error.textContent = '';
+    status.textContent = 'Henter siste registrering...';
+
+    try {
+        const resp = await fetch(
+            SUPA_URL + '/rest/v1/badetemperatur?order=rapportert.desc&limit=1', {
+                headers: {
+                    'apikey': SUPA_ANON,
+                    'Authorization': 'Bearer ' + SUPA_ANON
+                }
+            });
+
+        const data = await resp.json();
+        if (data && data.length > 0) {
+            const temp = parseFloat(data[0].temperatur);
+            const dt = new Date(data[0].rapportert);
+            const timeStr = dt.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' })
+                + ' kl. ' + dt.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+            showTemp(temp, timeStr, 'supa');
+        } else {
+            status.textContent = 'Ingen registreringer ennå';
+        }
+    } catch (err) {
+        error.textContent = 'Kunne ikke hente data';
+        status.textContent = '';
+        console.log('Supabase fetch feilet:', err.message);
+    }
+}
+
+// --- BLE: les temperatur ---
+
+async function readTemperature() {
+    const btn = document.getElementById('readBtn');
+    const status = document.getElementById('status');
+    const loc = document.getElementById('location');
+    const error = document.getElementById('error');
+
+    error.textContent = '';
+    btn.disabled = true;
+    status.textContent = 'Søker etter sensor...';
+
+    try {
+        const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: [ESS_UUID] }],
+            optionalServices: [ESS_UUID]
+        });
+
+        status.textContent = 'Kobler til ' + (device.name || 'sensor') + '...';
+        const server = await device.gatt.connect();
+
+        status.textContent = 'Leser temperatur...';
+        const service = await server.getPrimaryService(ESS_UUID);
+        const char = await service.getCharacteristic(TEMP_UUID);
+        const value = await char.readValue();
+
+        const raw = value.getInt16(0, true);
+        const temp = raw / 100;
+        const timeStr = 'kl. ' + new Date().toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+
+        showTemp(temp, timeStr, 'ble');
+        if (device.name) loc.textContent = device.name;
+
+        server.disconnect();
+
+        // Usynlig push til Supabase
+        pushToSupa(device.name || 'ukjent', temp);
+
+    } catch (err) {
+        if (err.name === 'NotFoundError') {
+            error.textContent = 'Fant ingen sensor i nærheten. Er du ved badeplassen?';
+        } else if (err.name === 'SecurityError') {
+            error.textContent = 'Bluetooth-tilgang ble avslått.';
+        } else if (err.message && err.message.includes('User cancelled')) {
+            error.textContent = '';
+        } else {
+            error.textContent = 'Kunne ikke lese sensor: ' + err.message;
+        }
+        status.textContent = '';
+    }
+
+    btn.disabled = false;
+}
+
+// --- Init: tilpass UI basert på BLE-støtte ---
+
+(function init() {
+    const readBtn = document.getElementById('readBtn');
+    const lastBtn = document.getElementById('lastBtn');
+    const infoBox = document.getElementById('infoBox');
+    const loc = document.getElementById('location');
+
+    if (!hasBLE) {
+        // iOS / Safari / eldre nettlesere
+        readBtn.style.display = 'none';
+        lastBtn.style.display = 'block';
+        infoBox.style.display = 'block';
+        infoBox.innerHTML = 'Din nettleser støtter ikke Bluetooth-avlesning.<br>Trykk knappen for å se sist registrerte temperatur.';
+        loc.textContent = '';
+        fetchLast();
+    } else {
+        // Chrome / Android — vis begge knapper
+        lastBtn.style.display = 'block';
+    }
+})();
+</script>
+</body>
+</html>
