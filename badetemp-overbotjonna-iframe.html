@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badetemperatur Øverbøtjønna – Siljan kommune</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+    <!-- v0.1-iframe
+         Changelog:
+         v0.1 - Iframe-versjon for siljan.kommune.no
+              - Kun Supabase-visning, ingen BLE/QR/knapper
+              - Kompakt layout for embedding
+              - Auto-oppdatering hvert 5. minutt
+    -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: transparent;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .card {
+            text-align: center;
+            max-width: 340px;
+            width: 100%;
+        }
+        .lokasjon {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2d6a4f;
+            margin-bottom: 4px;
+        }
+        .kommune {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .temp-ring {
+            position: relative;
+            width: 180px; height: 180px;
+            margin: 0 auto 16px;
+        }
+        .temp-ring > svg {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            transform: rotate(-90deg);
+        }
+        .bg-ring { fill: none; stroke: #e8efe8; stroke-width: 6; }
+        .value-ring {
+            fill: none; stroke: url(#tg);
+            stroke-width: 6; stroke-linecap: round;
+            stroke-dasharray: 502; stroke-dashoffset: 502;
+            transition: stroke-dashoffset 1.2s ease-out;
+        }
+        .temp-value {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .temp-number {
+            font-family: 'DM Mono', monospace;
+            font-size: 2.8em; font-weight: 400;
+            line-height: 1; color: #1a1a1a;
+        }
+        .temp-unit { font-size: 0.3em; color: #888; vertical-align: super; }
+        .temp-label { font-size: 0.78em; color: #888; margin-top: 4px; }
+        .status { font-size: 0.78em; color: #aaa; margin-bottom: 8px; }
+        .disclaimer { font-size: 0.65em; color: #bbb; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body>
+<svg style="position:absolute;width:0;height:0;">
+    <defs>
+        <linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1a4d2e"/>
+            <stop offset="50%" stop-color="#2d6a4f"/>
+            <stop offset="100%" stop-color="#52b788"/>
+        </linearGradient>
+    </defs>
+</svg>
+<div class="card">
+    <div class="lokasjon">Øverbøtjønna</div>
+    <div class="kommune">Badetemperatur &bull; Siljan kommune</div>
+    <div class="temp-ring">
+        <svg viewBox="0 0 180 180">
+            <circle class="bg-ring" cx="90" cy="90" r="80"/>
+            <circle class="value-ring" id="ring" cx="90" cy="90" r="80"/>
+        </svg>
+        <div class="temp-value">
+            <div class="temp-number" id="tempNumber">--<span class="temp-unit">°C</span></div>
+            <div class="temp-label" id="tempLabel">vanntemperatur</div>
+        </div>
+    </div>
+    <div class="status" id="status">Henter temperatur...</div>
+    <div class="disclaimer">Veiledende temperatur</div>
+</div>
+<script>
+const SUPA_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
+const SUPA_ANON = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
+
+function updRing(temp) {
+    const ring = document.getElementById('ring');
+    const c = 2 * Math.PI * 80;
+    ring.style.strokeDashoffset = c * (1 - Math.max(0, Math.min(35, temp)) / 35);
+}
+
+function updLabel(temp) {
+    const l = document.getElementById('tempLabel');
+    if (temp < 10)      l.textContent = 'Iskaldt!';
+    else if (temp < 15) l.textContent = 'Friskt!';
+    else if (temp < 18) l.textContent = 'Behagelig';
+    else if (temp < 22) l.textContent = 'Deilig!';
+    else                l.textContent = 'Tropisk!';
+}
+
+async function fetchTemp() {
+    try {
+        const resp = await fetch(
+            SUPA_URL + '/rest/v1/badetemperatur?order=rapportert.desc&limit=1', {
+                headers: { 'apikey': SUPA_ANON, 'Authorization': 'Bearer ' + SUPA_ANON }
+            });
+        const data = await resp.json();
+        if (data && data.length > 0) {
+            const temp = parseFloat(data[0].temperatur);
+            const dt = new Date(data[0].rapportert);
+            const now = new Date();
+            const diffH = (now - dt) / 3600000;
+
+            document.getElementById('tempNumber').innerHTML =
+                temp.toFixed(1) + '<span class="temp-unit">°C</span>';
+            updRing(temp);
+            updLabel(temp);
+
+            let timeStr;
+            if (diffH < 24) {
+                timeStr = 'Sist målt kl. ' + dt.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+            } else {
+                timeStr = 'Sist målt ' + dt.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' })
+                    + ' kl. ' + dt.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+            }
+            document.getElementById('status').textContent = timeStr;
+        } else {
+            document.getElementById('status').textContent = 'Ingen målinger ennå';
+        }
+    } catch (e) {
+        document.getElementById('status').textContent = 'Kunne ikke hente data';
+    }
+}
+
+fetchTemp();
+setInterval(fetchTemp, 300000);
+</script>
+</body>
+</html>
