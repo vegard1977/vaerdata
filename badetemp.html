@@ -311,12 +311,12 @@ async function fetchLast() {
 }
 
 // --- BLE: les temperatur fra enhetsnavn ---
-// Sensoren broadcaster navn som "Badetemp 25.5°C"
+// Sensoren broadcaster navn som "Tjønna 25.5°C"
 // Vi parser temperaturen direkte fra navnet - ingen tilkobling nødvendig!
 
 function parseTempFromName(name) {
-    // "Badetemp 25.5°C" -> 25.5
-    const match = name.match(/Badetemp\s+([-\d.]+)/);
+    // "Tjønna 25.5°C" -> 25.5
+    const match = name.match(/Tj[øo]nna\s+([-\d.]+)/);
     return match ? parseFloat(match[1]) : null;
 }
 
@@ -332,7 +332,7 @@ async function readTemperature() {
 
     try {
         const device = await navigator.bluetooth.requestDevice({
-            filters: [{ namePrefix: 'Badetemp' }]
+            filters: [{ namePrefix: 'Tj' }]
         });
 
         const temp = parseTempFromName(device.name);
