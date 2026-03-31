@@ -208,21 +208,18 @@
 
     <div class="footer">
         Veiledende temperatur. Kan avvike fra faktisk vanntemperatur.<br>
-        <a href="https://siljan.kommune.no">siljan.kommune.no</a> &bull; Badetemperatur v0.4
+        <a href="https://siljan.kommune.no">siljan.kommune.no</a> &bull; Badetemperatur v0.5
     </div>
 </div>
 
 <script>
 // ========================================
-// Siljan Badetemperatur v0.4
-// BLE + Supabase push/read
+// Siljan Badetemperatur v0.5
+// BLE enhetsnavn-avlesning + Supabase push/read
 // ========================================
 
-const ESS_UUID = 0x181A;
-const TEMP_UUID = 0x2A6E;
-
-const SUPA_URL = 'https://ygxhkdwhjyqpkmfzezxv.supabase.co';
-const SUPA_ANON = 'sb_publishable_wiJxJlwGbklxNgNjL4riJg_Hh55ayG0';
+const SUPA_URL = 'https://fdqjiubwnohtucpercro.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkcWppdWJ3bm9odHVjcGVyY3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMzMwOTAsImV4cCI6MjA4OTkwOTA5MH0.31n5oId96UEOB7Hf-rSCJ_DG57SNWNPJfeiCFDbW_vQ';
 
 const hasBLE = !!(navigator.bluetooth);
 
@@ -313,7 +310,15 @@ async function fetchLast() {
     }
 }
 
-// --- BLE: les temperatur ---
+// --- BLE: les temperatur fra enhetsnavn ---
+// Sensoren broadcaster navn som "Badetemp 25.5°C"
+// Vi parser temperaturen direkte fra navnet - ingen tilkobling nødvendig!
+
+function parseTempFromName(name) {
+    // "Badetemp 25.5°C" -> 25.5
+    const match = name.match(/Badetemp\s+([-\d.]+)/);
+    return match ? parseFloat(match[1]) : null;
+}
 
 async function readTemperature() {
     const btn = document.getElementById('readBtn');
@@ -327,29 +332,22 @@ async function readTemperature() {
 
     try {
         const device = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [ESS_UUID] }],
-            optionalServices: [ESS_UUID]
+            filters: [{ namePrefix: 'Badetemp' }]
         });
 
-        status.textContent = 'Kobler til ' + (device.name || 'sensor') + '...';
-        const server = await device.gatt.connect();
+        const temp = parseTempFromName(device.name);
+        if (temp === null) {
+            error.textContent = 'Kunne ikke lese temperatur fra sensor.';
+            btn.disabled = false;
+            return;
+        }
 
-        status.textContent = 'Leser temperatur...';
-        const service = await server.getPrimaryService(ESS_UUID);
-        const char = await service.getCharacteristic(TEMP_UUID);
-        const value = await char.readValue();
-
-        const raw = value.getInt16(0, true);
-        const temp = raw / 100;
         const timeStr = 'kl. ' + new Date().toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
-
         showTemp(temp, timeStr, 'ble');
-        if (device.name) loc.textContent = device.name;
-
-        server.disconnect();
+        loc.textContent = 'Øverbøtjønna';
 
         // Usynlig push til Supabase
-        pushToSupa(device.name || 'ukjent', temp);
+        pushToSupa('overbotjonna', temp);
 
     } catch (err) {
         if (err.name === 'NotFoundError') {
