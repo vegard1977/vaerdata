@@ -16,6 +16,16 @@
     <itunes:explicit>false</itunes:explicit>
 
     <item>
+      <title>Værmelding 01.04.2026 kl 07:01</title>
+      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
+      <pubDate>Wed, 01 Apr 2026 07:01:56 +0200</pubDate>
+      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_01-04-2026_0701.mp3" length="289974" type="audio/mpeg"/>
+      <guid isPermaLink="false">siljan-vaer-01-04-2026_0701</guid>
+      <itunes:duration>180</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+
+    <item>
       <title>Værmelding 31.03.2026 kl 18:00</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
       <pubDate>Tue, 31 Mar 2026 18:00:58 +0200</pubDate>
@@ -221,16 +231,6 @@
       <pubDate>Wed, 25 Mar 2026 07:02:20 +0100</pubDate>
       <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_25-03-2026_0702.mp3" length="428795" type="audio/mpeg"/>
       <guid isPermaLink="false">siljan-vaer-25-03-2026_0702</guid>
-      <itunes:duration>180</itunes:duration>
-      <itunes:explicit>false</itunes:explicit>
-    </item>
-
-    <item>
-      <title>Værmelding 24.03.2026 kl 18:01</title>
-      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
-      <pubDate>Tue, 24 Mar 2026 18:01:05 +0100</pubDate>
-      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_24-03-2026_1801.mp3" length="326387" type="audio/mpeg"/>
-      <guid isPermaLink="false">siljan-vaer-24-03-2026_1801</guid>
       <itunes:duration>180</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
     </item>
