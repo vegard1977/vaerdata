@@ -16,6 +16,16 @@
     <itunes:explicit>false</itunes:explicit>
 
     <item>
+      <title>Værmelding 10.05.2026 kl 07:02</title>
+      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
+      <pubDate>Sun, 10 May 2026 07:02:13 +0200</pubDate>
+      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_10-05-2026_0702.mp3" length="392428" type="audio/mpeg"/>
+      <guid isPermaLink="false">siljan-vaer-10-05-2026_0702</guid>
+      <itunes:duration>180</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+
+    <item>
       <title>Værmelding 09.05.2026 kl 18:01</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
       <pubDate>Sat, 09 May 2026 18:01:12 +0200</pubDate>
@@ -211,26 +221,6 @@
       <pubDate>Sun, 03 May 2026 12:01:04 +0200</pubDate>
       <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_03-05-2026_1201.mp3" length="328975" type="audio/mpeg"/>
       <guid isPermaLink="false">siljan-vaer-03-05-2026_1201</guid>
-      <itunes:duration>180</itunes:duration>
-      <itunes:explicit>false</itunes:explicit>
-    </item>
-
-    <item>
-      <title>Værmelding 03.05.2026 kl 07:02</title>
-      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
-      <pubDate>Sun, 03 May 2026 07:02:02 +0200</pubDate>
-      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_03-05-2026_0702.mp3" length="325947" type="audio/mpeg"/>
-      <guid isPermaLink="false">siljan-vaer-03-05-2026_0702</guid>
-      <itunes:duration>180</itunes:duration>
-      <itunes:explicit>false</itunes:explicit>
-    </item>
-
-    <item>
-      <title>Værmelding 02.05.2026 kl 18:01</title>
-      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
-      <pubDate>Sat, 02 May 2026 18:01:14 +0200</pubDate>
-      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_02-05-2026_1801.mp3" length="395744" type="audio/mpeg"/>
-      <guid isPermaLink="false">siljan-vaer-02-05-2026_1801</guid>
       <itunes:duration>180</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
     </item>
