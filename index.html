@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.24 -->
+<!-- Værdata Siljan v1.10.25 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1013,6 +1013,7 @@
     //   v1.10.21 - Police alerts in warning box (max 2, within 36 hours)
     //   v1.10.22 - Police: group updates by case ID (1 case with all updates). Aircraft: 1 fly in alerts
     //   v1.10.23 - Police alert: click to scroll to police log, show first update + count
+    //   v1.10.25 - Fixed police case grouping for new politiloggen.politiet.no event_id format (hyphen, not slash)
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -2215,11 +2216,11 @@
           return;
         }
         
-        // Group by case ID (extract from event_id: .../26n1bh/0 -> 26n1bh)
+        // Group by case ID (extract from event_id: .../26n1bh/0 -> 26n1bh, or new format 26n1bh-0 -> 26n1bh)
         const caseGroups = {};
         for (const event of data) {
           const eventId = event.event_id || '';
-          const match = eventId.match(/([a-z0-9]+)\/\d+$/i);
+          const match = eventId.match(/([a-z0-9]+)[\/-]\d+$/i);
           const caseId = match ? match[1] : eventId;
           
           if (!caseGroups[caseId]) {
