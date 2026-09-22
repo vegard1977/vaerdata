@@ -16,6 +16,16 @@
     <itunes:explicit>false</itunes:explicit>
 
     <item>
+      <title>Værmelding 22.09.2026 kl 07:02</title>
+      <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
+      <pubDate>Tue, 22 Sep 2026 07:02:00 +0200</pubDate>
+      <enclosure url="https://vegard1977.github.io/vaerdata/weather/varmelding_22-09-2026_0702.mp3" length="292851" type="audio/mpeg"/>
+      <guid isPermaLink="false">siljan-vaer-22-09-2026_0702</guid>
+      <itunes:duration>180</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+
+    <item>
       <title>Værmelding 21.09.2026 kl 18:01</title>
       <description>Lokal værmelding for Siljan med temperatur, vind, nedbør, solproduksjon og daglengde.</description>
       <pubDate>Mon, 21 Sep 2026 18:01:03 +0200</pubDate>
