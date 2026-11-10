@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.25 -->
+<!-- Værdata Siljan v1.10.26 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -1014,6 +1014,8 @@
     //   v1.10.22 - Police: group updates by case ID (1 case with all updates). Aircraft: 1 fly in alerts
     //   v1.10.23 - Police alert: click to scroll to police log, show first update + count
     //   v1.10.25 - Fixed police case grouping for new politiloggen.politiet.no event_id format (hyphen, not slash)
+    //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
+    //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1449,6 +1451,8 @@
 
     // v1.10.7: Update feels like card
     let currentTemp = null, currentWind = null, currentHumidity = null;
+    let currentCloudCover = null; // v1.10.26: shared with aurora card
+    let lastLongStatsUpdate = 0;  // v1.10.26: throttles 7d/30d summary to every 15 min
     function updateFeelsLikeCard() {
       if (currentTemp === null) return;
       
@@ -1522,45 +1526,32 @@
     }
 
     // v1.10.7: Update temperature statistics card (called from updateDashboard)
-    function updateTempStatsCard(data7d, data30d) {
-      if (data7d && data7d.length > 0) {
-        const temps7 = data7d.map(d => d.temperature).filter(t => t !== null);
-        const temp7 = findMinMax(data7d, 'temperature');
-        
+    // v1.10.26: Takes weather_summary RPC results instead of raw rows
+    function updateTempStatsCard(s7, s30) {
+      if (s7 && s7.rows > 0) {
+        const temp7 = sumField(s7, 'temperature');
+
         const coldest7El = document.getElementById('coldest7');
         coldest7El.innerHTML = fmtTempColored(temp7.min.val);
         document.getElementById('coldest7date').textContent = fmtShortDate(temp7.min.time);
-        
+
         const warmest7El = document.getElementById('warmest7');
         warmest7El.innerHTML = fmtTempColored(temp7.max.val);
         document.getElementById('warmest7date').textContent = fmtShortDate(temp7.max.time);
-        
-        const avg7 = temps7.reduce((a, b) => a + b, 0) / temps7.length;
-        document.getElementById('tempAvg7').innerHTML = fmtTempColored(avg7);
+
+        document.getElementById('tempAvg7').innerHTML = fmtTempColored(temp7.avg);
       }
-      
-      if (data30d && data30d.length > 0) {
-        const temps30 = data30d.map(d => d.temperature).filter(t => t !== null);
-        const avg30 = temps30.reduce((a, b) => a + b, 0) / temps30.length;
-        document.getElementById('tempAvg30').innerHTML = fmtTempColored(avg30);
-        
-        // Count frost days and calculate degree-days
-        const dailyTemps = {};
-        for (const d of data30d) {
-          const dateKey = getDateKey(d.recorded_at);
-          if (!dailyTemps[dateKey]) dailyTemps[dateKey] = [];
-          if (d.temperature !== null) dailyTemps[dateKey].push(d.temperature);
-        }
-        
+
+      if (s30 && s30.rows > 0) {
+        document.getElementById('tempAvg30').innerHTML = fmtTempColored(sumField(s30, 'temperature').avg);
+
+        // Count frost days and calculate degree-days (per local day, computed server-side)
         let frostDays = 0, coldDegrees = 0, warmDegrees = 0;
-        for (const day of Object.keys(dailyTemps)) {
-          const temps = dailyTemps[day];
-          const min = Math.min(...temps);
-          const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
-          
-          if (min < 0) frostDays++;
-          if (avg < 0) coldDegrees += Math.abs(avg);
-          if (avg > 0) warmDegrees += avg;
+        for (const day of s30.daily) {
+          if (day.tmin === null || day.tavg === null) continue;
+          if (day.tmin < 0) frostDays++;
+          if (day.tavg < 0) coldDegrees += Math.abs(day.tavg);
+          if (day.tavg > 0) warmDegrees += day.tavg;
         }
         
         document.getElementById('frostDays').textContent = frostDays;
@@ -1644,8 +1635,12 @@
           const moon = getMoonPhase(new Date());
           const moonIllum = moon.illumination;
           
-          // Get cloud cover from latest weather data (already fetched)
-          const cloudCover = parseFloat(document.getElementById('clouds')?.textContent) || 0;
+          // v1.10.26: Cloud cover from latest weather row (DOM could still show '--' on first load → 0%)
+          if (currentCloudCover === null) {
+            const latestCloud = await fetchData('weather_data', 'cloud_cover', 'cloud_cover=not.is.null', 'recorded_at.desc', '1');
+            if (latestCloud.length > 0) currentCloudCover = latestCloud[0].cloud_cover;
+          }
+          const cloudCover = currentCloudCover ?? 0;
           
           // Calculate probability
           const prob = getAuroraProbability(kp, cloudCover, moonIllum);
@@ -1792,9 +1787,40 @@
       return new Date(Date.now() - d * 24 * 60 * 60 * 1000).toISOString();
     }
 
+    // v1.10.26: Local (Europe/Oslo) date key YYYY-MM-DD — matches server-side daily grouping
     function getDateKey(isoString) {
-      const d = new Date(isoString);
-      return d.toISOString().split('T')[0];
+      return new Date(isoString).toLocaleDateString('sv-SE', { timeZone: 'Europe/Oslo' });
+    }
+
+    // v1.10.26: Server-side aggregates via RPC. Raw queries were capped at 1000 rows by
+    // PostgREST, so 24h/7d/30d stats only saw the last ~16 hours. Also far less egress.
+    async function fetchSummary(sinceIso) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/weather_summary`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_since: sinceIso })
+      });
+      if (!res.ok) throw new Error('weather_summary HTTP ' + res.status);
+      return res.json();
+    }
+
+    // Same shape as findMinMax(): { min: {val, time}, max: {val, time}, avg }
+    function sumField(s, field) {
+      const f = s && s.fields ? s.fields[field] : null;
+      return f || { min: { val: null, time: null }, max: { val: null, time: null }, avg: null };
+    }
+
+    // Same shape as calcDailyRain()/calcDailyMax(): { 'YYYY-MM-DD': {val, time} }
+    function sumDaily(s, field) {
+      const out = {};
+      for (const d of (s && s.daily) || []) {
+        if (d[field] !== null && d[field] !== undefined) out[d.day] = { val: d[field], time: d.day };
+      }
+      return out;
     }
 
     function findMinMax(data, field) {
@@ -2465,6 +2491,7 @@
           document.getElementById('windDirText').textContent = windDir.text;
           document.getElementById('windDirDeg').textContent = d.wind_direction ? d.wind_direction + '°' : '--';
           document.getElementById('clouds').textContent = fmt(d.cloud_cover, 0);
+          if (d.cloud_cover !== null && d.cloud_cover !== undefined) currentCloudCover = d.cloud_cover;
           document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '%';
           document.getElementById('thunderProb').textContent = fmt(d.thunder_probability, 0) + '%';
 
@@ -2486,58 +2513,59 @@
           updateFeelsLikeCard();
         }
 
-        const data24h = await fetchData('weather_data', '*', `recorded_at=gte.${hoursAgo(24)}`);
-        if (data24h.length > 0) {
-          const temp24 = findMinMax(data24h, 'temperature');
+        // v1.10.26: server-side aggregate (raw 24h = 1440 rows, was capped at 1000)
+        const s24 = await fetchSummary(hoursAgo(24));
+        if (s24.rows > 0) {
+          const temp24 = sumField(s24, 'temperature');
           document.getElementById('temp24min').textContent = fmt(temp24.min.val);
           document.getElementById('temp24max').textContent = fmt(temp24.max.val);
           document.getElementById('temp24times').textContent = `(${fmtTime(temp24.min.time)} / ${fmtTime(temp24.max.time)})`;
 
-          const hum24 = findMinMax(data24h, 'humidity');
+          const hum24 = sumField(s24, 'humidity');
           document.getElementById('hum24min').textContent = fmt(hum24.min.val, 0);
           document.getElementById('hum24max').textContent = fmt(hum24.max.val, 0);
           document.getElementById('hum24times').textContent = `(${fmtTime(hum24.min.time)} / ${fmtTime(hum24.max.time)})`;
 
-          const press24 = findMinMax(data24h, 'pressure');
+          const press24 = sumField(s24, 'pressure');
           document.getElementById('press24min').textContent = fmt(press24.min.val, 0);
           document.getElementById('press24max').textContent = fmt(press24.max.val, 0);
           document.getElementById('press24times').textContent = `(${fmtTime(press24.min.time)} / ${fmtTime(press24.max.time)})`;
 
-          const wind24 = findMinMax(data24h, 'wind_speed');
+          const wind24 = sumField(s24, 'wind_speed');
           document.getElementById('wind24max').textContent = fmt(kmhToMs(wind24.max.val), 1) + ' m/s';
           document.getElementById('wind24time').textContent = fmtTime(wind24.max.time);
 
-          const uv24 = findMinMax(data24h, 'uv_index');
+          const uv24 = sumField(s24, 'uv_index');
           document.getElementById('uv24max').textContent = fmt(uv24.max.val, 1);
           document.getElementById('uv24time').textContent = fmtTime(uv24.max.time);
 
-          const gust24 = findMinMax(data24h, 'wind_gust');
+          const gust24 = sumField(s24, 'wind_gust');
           document.getElementById('gust24max').textContent = fmt(kmhToMs(gust24.max.val), 1) + ' m/s';
           document.getElementById('gust24time').textContent = fmtTime(gust24.max.time);
 
-          const clouds24 = findMinMax(data24h, 'cloud_cover');
+          const clouds24 = sumField(s24, 'cloud_cover');
           document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '%';
           document.getElementById('clouds24minTime').textContent = fmtTime(clouds24.min.time);
           document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '%';
           document.getElementById('clouds24maxTime').textContent = fmtTime(clouds24.max.time);
 
-          const thunder24 = findMinMax(data24h, 'thunder_probability');
+          const thunder24 = sumField(s24, 'thunder_probability');
           document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '%';
           document.getElementById('thunderProb24time').textContent = fmtTime(thunder24.max.time);
 
-          const irr24 = findMinMax(data24h, 'irradiance');
+          const irr24 = sumField(s24, 'irradiance');
           document.getElementById('irrMax').textContent = fmt(irr24.max.val, 0) + ' W/m²';
           document.getElementById('irrMaxTime').textContent = fmtTime(irr24.max.time);
 
-          const sunMinutes24 = data24h.filter(d => d.irradiance > 120).length;
-          document.getElementById('sun24').textContent = fmt(sunMinutes24 / 60) + 't';
+          document.getElementById('sun24').textContent = fmt(s24.sun_minutes / 60) + 't';
 
-          const daily24 = calcDailyRain(data24h);
+          const daily24 = sumDaily(s24, 'rain_today');
           const rain24total = Object.values(daily24).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain24').textContent = fmt(rain24total) + ' mm';
         }
 
-        const data3h = await fetchData('weather_data', 'pressure,recorded_at', `recorded_at=gte.${hoursAgo(3)}`, 'recorded_at.asc');
+        // v1.10.26: skip rows where the station was offline (pressure NULL)
+        const data3h = await fetchData('weather_data', 'pressure,recorded_at', `recorded_at=gte.${hoursAgo(3)}&pressure=not.is.null`, 'recorded_at.asc');
         if (data3h.length > 1) {
           const first = data3h[0].pressure;
           const last = data3h[data3h.length - 1].pressure;
@@ -2552,29 +2580,33 @@
           }
         }
 
-        const data7d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(7)}`);
-        if (data7d.length > 0) {
-          const temp7 = findMinMax(data7d, 'temperature');
+        // v1.10.26: 7d/30d via server-side aggregates, refreshed every 15 min (day-level stats)
+        if (Date.now() - lastLongStatsUpdate < 15 * 60 * 1000) return;
+        lastLongStatsUpdate = Date.now();
+
+        const s7 = await fetchSummary(daysAgo(7));
+        if (s7.rows > 0) {
+          const temp7 = sumField(s7, 'temperature');
           document.getElementById('temp7min').textContent = fmt(temp7.min.val);
           document.getElementById('temp7max').textContent = fmt(temp7.max.val);
           document.getElementById('temp7times').textContent = `(${fmtShortDate(temp7.min.time)} / ${fmtShortDate(temp7.max.time)})`;
 
-          const uv7 = findMinMax(data7d, 'uv_index');
+          const uv7 = sumField(s7, 'uv_index');
           document.getElementById('uv7max').textContent = fmt(uv7.max.val, 1);
           document.getElementById('uv7date').textContent = fmtShortDate(uv7.max.time);
 
-          const siljanTempMin7 = findMinMax(data7d, 'temp_min_daily');
-          const siljanTempMax7 = findMinMax(data7d, 'temp_max_daily');
+          const siljanTempMin7 = sumField(s7, 'temp_min_daily');
+          const siljanTempMax7 = sumField(s7, 'temp_max_daily');
           document.getElementById('siljanTempMin7').innerHTML = fmtTempColored(siljanTempMin7.min.val);
           document.getElementById('siljanTempMin7date').textContent = fmtShortDate(siljanTempMin7.min.time);
           document.getElementById('siljanTempMax7').innerHTML = fmtTempColored(siljanTempMax7.max.val);
           document.getElementById('siljanTempMax7date').textContent = fmtShortDate(siljanTempMax7.max.time);
 
-          const siljanWind7 = findMinMax(data7d, 'wind_max_daily');
+          const siljanWind7 = sumField(s7, 'wind_max_daily');
           document.getElementById('siljanWind7max').textContent = fmt(kmhToMs(siljanWind7.max.val), 1) + ' m/s';
           document.getElementById('siljanWind7date').textContent = fmtShortDate(siljanWind7.max.time);
 
-          const siljanRain7daily = calcDailyMax(data7d, 'rain_max_daily');
+          const siljanRain7daily = sumDaily(s7, 'rain_max_daily');
           const siljanRain7vals = Object.values(siljanRain7daily);
           let siljanRain7max = { val: 0, time: null };
           for (const v of siljanRain7vals) {
@@ -2587,19 +2619,16 @@
             ? fmtDayMonth(siljanRain7max.time) 
             : (siljanRain7vals.length > 0 ? 'ingen nedbør' : '--');
 
-          const hums = data7d.map(d => d.humidity).filter(h => h !== null);
-          document.getElementById('hum7avg').textContent = fmt(hums.reduce((a, b) => a + b, 0) / hums.length, 0) + '%';
+          document.getElementById('hum7avg').textContent = fmt(sumField(s7, 'humidity').avg, 0) + '%';
+          document.getElementById('press7avg').textContent = fmt(sumField(s7, 'pressure').avg, 0);
 
-          const presses = data7d.map(d => d.pressure).filter(p => p !== null);
-          document.getElementById('press7avg').textContent = fmt(presses.reduce((a, b) => a + b, 0) / presses.length, 0);
-
-          const wind7 = findMinMax(data7d, 'wind_speed');
+          const wind7 = sumField(s7, 'wind_speed');
           document.getElementById('wind7max').textContent = fmt(kmhToMs(wind7.max.val), 1) + ' m/s';
           document.getElementById('wind7time').textContent = fmtShortDate(wind7.max.time);
 
           // sun7 removed - no UI element exists
 
-          const daily7 = calcDailyRain(data7d);
+          const daily7 = sumDaily(s7, 'rain_today');
           const rain7total = Object.values(daily7).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain7').textContent = fmt(rain7total) + ' mm';
 
@@ -2609,35 +2638,34 @@
           document.getElementById('rainDays7').textContent = stats7.rainDays;
         }
 
-        const data30d = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(30)}`);
-        if (data30d.length > 0) {
-          const temp30 = findMinMax(data30d, 'temperature');
+        const s30 = await fetchSummary(daysAgo(30));
+        if (s30.rows > 0) {
+          const temp30 = sumField(s30, 'temperature');
           document.getElementById('temp30min').textContent = fmt(temp30.min.val);
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
           document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
 
-          const uv30 = findMinMax(data30d, 'uv_index');
+          const uv30 = sumField(s30, 'uv_index');
           document.getElementById('uv30max').textContent = fmt(uv30.max.val, 1);
           document.getElementById('uv30date').textContent = fmtShortDate(uv30.max.time);
 
-          const siljanTempMin30 = findMinMax(data30d, 'temp_min_daily');
-          const siljanTempMax30 = findMinMax(data30d, 'temp_max_daily');
+          const siljanTempMin30 = sumField(s30, 'temp_min_daily');
+          const siljanTempMax30 = sumField(s30, 'temp_max_daily');
           document.getElementById('siljanTempMin30').innerHTML = fmtTempColored(siljanTempMin30.min.val);
           document.getElementById('siljanTempMin30date').textContent = fmtShortDate(siljanTempMin30.min.time);
           document.getElementById('siljanTempMax30').innerHTML = fmtTempColored(siljanTempMax30.max.val);
           document.getElementById('siljanTempMax30date').textContent = fmtShortDate(siljanTempMax30.max.time);
 
-          const siljanWind30 = findMinMax(data30d, 'wind_max_daily');
+          const siljanWind30 = sumField(s30, 'wind_max_daily');
           document.getElementById('siljanWind30max').textContent = fmt(kmhToMs(siljanWind30.max.val), 1) + ' m/s';
           document.getElementById('siljanWind30date').textContent = fmtShortDate(siljanWind30.max.time);
           
-          const siljanWindVals = data30d.map(d => d.wind_max_daily).filter(w => w !== null && w !== undefined);
-          const siljanWindAvg = siljanWindVals.length > 0 ? siljanWindVals.reduce((a, b) => a + b, 0) / siljanWindVals.length : null;
+          const siljanWindAvg = sumField(s30, 'wind_max_daily').avg;
           document.getElementById('siljanWindAvg').textContent = siljanWindAvg !== null 
             ? fmt(kmhToMs(siljanWindAvg), 1) + ' m/s' 
             : '-- m/s';
 
-          const siljanRain30daily = calcDailyMax(data30d, 'rain_max_daily');
+          const siljanRain30daily = sumDaily(s30, 'rain_max_daily');
           const siljanRain30vals = Object.values(siljanRain30daily);
           let siljanRain30max = { val: 0, time: null };
           let siljanRain30total = 0;
@@ -2655,11 +2683,11 @@
             ? fmt(siljanRain30total / siljanRain30vals.length) + ' mm' 
             : '-- mm';
 
-          const wind30 = findMinMax(data30d, 'wind_speed');
+          const wind30 = sumField(s30, 'wind_speed');
           document.getElementById('wind30max').textContent = fmt(kmhToMs(wind30.max.val), 1) + ' m/s';
           document.getElementById('wind30time').textContent = fmtShortDate(wind30.max.time);
 
-          const daily30 = calcDailyRain(data30d);
+          const daily30 = sumDaily(s30, 'rain_today');
           const rain30total = Object.values(daily30).reduce((sum, d) => sum + d.val, 0);
           document.getElementById('rain30').textContent = fmt(rain30total) + ' mm';
 
@@ -2672,9 +2700,7 @@
         }
 
         // v1.10.7: Update temperature statistics card
-        const data7dForStats = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(7)}`);
-        const data30dForStats = await fetchData('weather_data', '*', `recorded_at=gte.${daysAgo(30)}`);
-        updateTempStatsCard(data7dForStats, data30dForStats);
+        updateTempStatsCard(s7, s30);
 
       } catch (err) {
         console.error('Feil ved henting av data:', err);
