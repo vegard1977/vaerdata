@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.30 -->
+<!-- Værdata Siljan v1.10.31 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -38,7 +38,6 @@
       font-size: 0.85rem;
     }
     .section-nav a { color: #aaa; text-decoration: none; }
-    .section-nav a:hover { color: #eee; text-decoration: underline; }
     .podcast-widget {
       display: flex;
       flex-wrap: wrap;
@@ -50,6 +49,7 @@
       padding: 8px 15px;
       font-size: 0.8rem;
     }
+    .podcast-widget.below-now { max-width: 1200px; margin: 12px auto 0 auto; }
     .podcast-widget img {
       width: 35px;
       height: 35px;
@@ -87,14 +87,12 @@
       font-size: 12px;
       transition: transform 0.2s;
     }
-    .podcast-play-btn:hover { transform: scale(1.1); }
     .podcast-link {
       color: #888;
       text-decoration: none;
       font-size: 1rem;
       transition: color 0.2s;
     }
-    .podcast-link:hover { color: #eee; }
     .podcast-link.spotify { color: #1DB954; }
     .podcast-link.rss { color: #ff6b00; }
     #podcastAudio { display: none; }
@@ -112,7 +110,6 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .podcast-time-btn:hover:not(:disabled) { background: #444; color: #eee; }
     .podcast-time-btn.active { background: #4ade80; color: #000; font-weight: 600; }
     .podcast-time-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     .section-title {
@@ -150,6 +147,7 @@
       background: #252542;
       border-radius: 10px;
       padding: 15px;
+      min-width: 0;
     }
     .card h2 {
       font-size: 0.9rem;
@@ -231,6 +229,7 @@
       margin-top: 10px;
     }
     .forecast-day {
+      scroll-snap-align: start;
       text-align: center;
       padding: 10px 5px;
       background: #1a1a2e;
@@ -252,10 +251,8 @@
     .alert-water-warning { color: #f97316; }
     .alert-water-danger { color: #ef4444; }
     .alert-aircraft-link { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.2s; }
-    .alert-aircraft-link:hover { background: rgba(96, 165, 250, 0.2); border-radius: 5px; }
     .alert-aircraft-link .alert-title { color: #60a5fa; }
     .alert-police-link { transition: background 0.2s; }
-    .alert-police-link:hover { background: rgba(245, 158, 11, 0.2); border-radius: 5px; }
 
     /* Water level grid */
     .water-grid {
@@ -309,13 +306,29 @@
     .police-item .police-desc { font-size: 0.8rem; color: #aaa; line-height: 1.4; }
     .police-item .police-time { font-size: 0.7rem; color: #666; margin-top: 5px; }
 
+    .calc-input { width: 100%; max-width: 90px; min-height: 44px; padding: 8px 4px; font-size: 16px;
+      border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center; }
+    .calc-btn { min-height: 44px; padding: 10px 28px; font-size: 1rem; border-radius: 5px; border: none;
+      background: #a855f7; color: #fff; font-weight: bold; cursor: pointer; }
+    .stat-value { white-space: nowrap; }
+    .section-fold > summary { min-height: 44px; align-items: center; }
+
+    @media (hover: hover) {
+      .section-nav a:hover { color: #eee; text-decoration: underline; }
+      .podcast-play-btn:hover { transform: scale(1.1); }
+      .podcast-link:hover { color: #eee; }
+      .podcast-time-btn:hover:not(:disabled) { background: #444; color: #eee; }
+      .alert-aircraft-link:hover { background: rgba(96, 165, 250, 0.2); border-radius: 5px; }
+      .alert-police-link:hover { background: rgba(245, 158, 11, 0.2); border-radius: 5px; }
+    }
+
+    /* v1.10.31: phone + tablet portrait */
     @media (max-width: 768px) {
       .header-container {
         flex-direction: column;
         gap: 10px;
       }
       .header-title { text-align: center; }
-      .section-nav { justify-content: center; }
       .podcast-widget {
         padding: 6px 12px;
       }
@@ -323,20 +336,74 @@
         width: 30px;
         height: 30px;
       }
+      /* touch targets (44 px) */
+      .podcast-time-btn { min-height: 44px; min-width: 48px; font-size: 0.8rem; }
+      .podcast-play-btn { width: 44px; height: 44px; font-size: 16px; }
+      .podcast-link { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 44px; }
+      .podcast-controls { gap: 2px; }
+      /* section shortcuts: one row that scrolls sideways */
+      .section-nav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; gap: 0 4px; margin-bottom: 10px; }
+      .section-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; }
+      .card-footer a { display: inline-block; padding: 12px 4px; }
+      /* police log: three lines per case until tapped */
+      .police-item { cursor: pointer; }
+      .police-item:not(.open) .police-desc {
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+      }
+      .police-item:not(.open) .police-desc ~ .police-desc { display: none; }
+      .police-item:not(.open)::after { content: "Vis alt ▾"; display: block; margin-top: 6px; font-size: 0.75rem; color: #a3a3b5; }
+      .police-item.open::after { content: "Vis mindre ▴"; display: block; margin-top: 6px; font-size: 0.75rem; color: #a3a3b5; }
+      /* aircraft line in the alert box on one line */
+      .alert-aircraft-link .alert-desc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    }
+
+    /* tablet portrait: three reservoirs per row */
+    @media (min-width: 601px) and (max-width: 900px) {
+      .water-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* phones */
+    @media (max-width: 600px) {
       .forecast-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(7, minmax(70px, 1fr));
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 6px;
+        scroll-snap-type: x proximity;
       }
-      .forecast-day:nth-child(n+5) {
-        display: none;
+      .water-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      h1 { font-size: 1.25rem; margin-bottom: 0; }
+      .grid { gap: 10px; }
+      .section-title { margin: 22px 0 10px; }
+      /* podcast widget: two rows */
+      .podcast-widget { width: 100%; max-width: 360px; border-radius: 14px; gap: 8px; }
+      .podcast-widget.below-now { max-width: none; }
+      .podcast-info-mini { flex: 1; min-width: 0; }
+      .podcast-times { order: 3; flex: 1 0 100%; gap: 8px; }
+      .podcast-time-btn { flex: 1; }
+      /* reservoirs: one row each */
+      .water-grid { grid-template-columns: 1fr; gap: 8px; }
+      .water-item {
+        display: grid; grid-template-columns: 1fr auto; column-gap: 10px; align-items: baseline;
+        text-align: left; padding: 8px 12px;
       }
-      .water-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .water-item:nth-child(5) {
-        grid-column: 1 / -1;
-        max-width: 50%;
-        margin: 0 auto;
-      }
+      .water-item .water-ref { margin-top: 0; }
+      .water-item .fill-bar { margin-top: 4px; }
+      .water-item .reservoir-name { margin: 0; font-size: 0.9rem; }
+      .water-item .fill-pct { grid-column: 2; grid-row: 1; margin: 0; }
+      .water-item .water-energy { grid-column: 2; grid-row: 2; text-align: right; margin: 0; }
+      .water-item .fill-bar { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 400px) {
+      .stats-4 { grid-template-columns: repeat(2, 1fr); }
+      .card.frost .stats-4 { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .stats { gap: 6px; }
+      .card { padding: 12px; }
     }
   </style>
 </head>
@@ -1012,19 +1079,19 @@
       <div class="stats">
         <div class="stat">
           <div class="stat-label">Din kWp</div>
-          <input type="number" id="calcKwp" value="7.2" step="0.1" min="0.1" max="50" style="width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center;">
+          <input type="number" id="calcKwp" class="calc-input" inputmode="decimal" value="7.2" step="0.1" min="0.1" max="50">
         </div>
         <div class="stat">
           <div class="stat-label">Takvinkel (°)</div>
-          <input type="number" id="calcTilt" value="33" step="1" min="0" max="90" style="width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center;">
+          <input type="number" id="calcTilt" class="calc-input" inputmode="numeric" value="33" step="1" min="0" max="90">
         </div>
         <div class="stat">
           <div class="stat-label">Azimut (°)</div>
-          <input type="number" id="calcAzimuth" value="180" step="1" min="0" max="360" style="width: 70px; padding: 5px; border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center;">
+          <input type="number" id="calcAzimuth" class="calc-input" inputmode="numeric" value="180" step="1" min="0" max="360">
         </div>
       </div>
       <div style="text-align: center; margin-top: 15px;">
-        <button onclick="calculatePV()" style="padding: 8px 20px; border-radius: 5px; border: none; background: #a855f7; color: white; cursor: pointer; font-weight: bold;">Beregn</button>
+        <button onclick="calculatePV()" class="calc-btn">Beregn</button>
       </div>
       <div style="text-align: center; margin-top: 15px;">
         <div class="stat-label">Estimert produksjon nå</div>
@@ -1079,6 +1146,10 @@
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
     //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
+    //   v1.10.31 - Mobile after design review (agent 2): podcast widget in two rows with 44 px
+    //              touch targets, all 7 forecast days (swipe), reservoirs as rows on phones,
+    //              tighter spacing, PV inputs 16 px (no iOS zoom), police text clamped to 3 lines
+    //              (tap to expand), separate breakpoints for phone/tablet, hover only on hover devices
     //   v1.10.30 - Frost depth card shown under "Været nå" in the winter half (Oct-Apr) or
     //              whenever there is frost in the ground; otherwise under "Flere målinger"
     //   v1.10.29 - Layout after design review (agent 1): "Været nå" first (temp, feels like, wind,
@@ -3033,6 +3104,19 @@
     });
 
     placeFrostCard(false);
+
+    // v1.10.31: on phones the podcast widget sits below "Været nå" so the weather comes first
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      const widget = document.querySelector('.podcast-widget');
+      widget.classList.add('below-now');
+      document.getElementById('gridNow').after(widget);
+    }
+
+    // v1.10.31: tap a police case to show the full text (clamped to 3 lines on phones)
+    document.getElementById('policeList').addEventListener('click', e => {
+      const item = e.target.closest('.police-item');
+      if (item) item.classList.toggle('open');
+    });
 
     // Initial load
     updateDashboard();
