@@ -1,6 +1,6 @@
-<!-- Værdata Siljan v1.10.31 -->
+<!-- Værdata Siljan v1.10.32 -->
 <!DOCTYPE html>
-<html lang="no">
+<html lang="nb">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,7 @@
     }
     h1 { margin-bottom: 2px; font-size: 1.5rem; }
     .last-updated { color: #aaa; font-size: 0.85rem; }
-    .updated { text-align: center; color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+    .updated { text-align: center; color: #a3a3b5; font-size: 0.85rem; margin-bottom: 20px; }
 
     /* Podcast widget */
     .header-container {
@@ -61,13 +61,13 @@
       gap: 2px;
     }
     .podcast-title-mini {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.75rem;
       color: #eee;
     }
     .podcast-date-mini {
-      font-size: 0.65rem;
-      color: #888;
+      font-size: 0.75rem;
+      color: #a3a3b5;
     }
     .podcast-controls {
       display: flex;
@@ -88,7 +88,7 @@
       transition: transform 0.2s;
     }
     .podcast-link {
-      color: #888;
+      color: #a3a3b5;
       text-decoration: none;
       font-size: 1rem;
       transition: color 0.2s;
@@ -104,20 +104,21 @@
       background: #333;
       border: none;
       border-radius: 4px;
-      color: #888;
+      color: #a3a3b5;
       padding: 4px 6px;
-      font-size: 0.65rem;
+      font-size: 0.75rem;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .podcast-time-btn.active { background: #4ade80; color: #000; font-weight: 600; }
-    .podcast-time-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .podcast-time-btn.active { background: #4ade80; color: #000; font-weight: 700; }
+    .podcast-time-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .section-title {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       gap: 10px;
       font-size: 1rem;
+      font-weight: normal;
       color: #aaa;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -129,13 +130,14 @@
       margin-right: auto;
       scroll-margin-top: 10px;
     }
-    .section-src { font-size: 0.75rem; color: #888; text-transform: none; letter-spacing: 0; }
+    .section-src { font-size: 0.75rem; color: #a3a3b5; text-transform: none; letter-spacing: 0; }
     /* v1.10.29: foldable sections (open on desktop, closed on phones) */
     .section-fold { scroll-margin-top: 10px; }
     .section-fold > summary { cursor: pointer; list-style: none; }
     .section-fold > summary::-webkit-details-marker { display: none; }
-    .section-fold > summary > span:first-child::before { content: "▸ "; }
-    .section-fold[open] > summary > span:first-child::before { content: "▾ "; }
+    .section-fold > summary > h2 { font: inherit; }
+    .section-fold > summary > h2::before { content: "▸ "; }
+    .section-fold[open] > summary > h2::before { content: "▾ "; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -149,9 +151,9 @@
       padding: 15px;
       min-width: 0;
     }
-    .card h2 {
+    .card h2, .card h3 {
       font-size: 0.9rem;
-      color: #888;
+      color: #a3a3b5;
       margin-bottom: 10px;
       border-bottom: 1px solid #333;
       padding-bottom: 5px;
@@ -165,8 +167,8 @@
     .card.police { border-left: 3px solid #14b8a6; }
     .card.solar, .card.calculator { border-left: 3px solid #84cc16; }
     .card.hero .value { font-size: 3rem; line-height: 1.1; }
-    .card-footer { text-align: center; color: #888; font-size: 0.85rem; margin-top: 12px; }
-    .card-footer a { color: #888; }
+    .card-footer { text-align: center; color: #a3a3b5; font-size: 0.85rem; margin-top: 12px; }
+    .card-footer a { color: #a3a3b5; }
     .wind-now-dir { margin-left: 10px; font-size: 1rem; color: #ccc; white-space: nowrap; }
     .frost-none { color: #4ade80; }
     .frost-note { font-size: 0.75rem; color: #a3a3b5; margin-top: 8px; }
@@ -174,31 +176,32 @@
     .aurora-low { color: #4ade80; }
     .aurora-moderate { color: #fbbf24; }
     .aurora-high { color: #f97316; }
-    .aurora-storm { color: #ef4444; }
+    .aurora-storm { color: #f87171; }
     .moon-phase { font-size: 2.5rem; display: inline-block; }
     .comfort-good { color: #4ade80; }
     .comfort-ok { color: #fbbf24; }
     .comfort-bad { color: #f87171; }
     .card.alert { border-left: 3px solid #22c55e; }
+    .alert-level { font-weight: normal; color: #a3a3b5; }
     .card.alert.compact { padding: 8px 15px; }
     .card.alert.compact h2 { display: none; }
     .card.alert.neutral { border-left-color: #555; }
-    .alert-events-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px;
+    .alert-events-label { font-size: 0.75rem; color: #a3a3b5; text-transform: uppercase; letter-spacing: 1px;
       margin: 10px 0 8px 0; padding-top: 10px; border-top: 1px solid #333; }
     .alert-events-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
     .card.alert.red { border-left-color: #ef4444; background: #2a1e1e; }
     .value { font-size: 2rem; font-weight: bold; }
-    .unit { font-size: 0.9rem; color: #888; }
+    .unit { font-size: 0.9rem; color: #a3a3b5; }
     .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
     .stats-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
     .stats-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
     .stat { text-align: center; }
-    .stat-label { font-size: 0.7rem; color: #666; }
+    .stat-label { font-size: 0.8rem; color: #a3a3b5; }
     .stat-value { font-size: 1rem; font-weight: bold; }
-    .stat-detail { font-size: 0.65rem; color: #888; }
+    .stat-detail { font-size: 0.75rem; color: #a3a3b5; }
     .trend-up { color: #4ade80; }
     .trend-down { color: #f87171; }
     .sun { color: #fbbf24; }
@@ -210,8 +213,8 @@
     .uv-low { color: #4ade80; }
     .uv-moderate { color: #fbbf24; }
     .uv-high { color: #f97316; }
-    .uv-very-high { color: #ef4444; }
-    .uv-extreme { color: #a855f7; }
+    .uv-very-high { color: #f87171; }
+    .uv-extreme { color: #c084fc; }
     .wind-dir { font-size: 1.5rem; }
 
     /* Water level colors - v1.8 */
@@ -235,10 +238,10 @@
       background: #1a1a2e;
       border-radius: 8px;
     }
-    .forecast-day .day-name { font-size: 0.75rem; color: #888; margin-bottom: 5px; }
+    .forecast-day .day-name { font-size: 0.8rem; color: #a3a3b5; margin-bottom: 5px; }
     .forecast-day .weather-icon { font-size: 1.5rem; margin: 5px 0; }
     .forecast-day .temp-range { font-size: 0.8rem; }
-    .forecast-day .precip { font-size: 0.7rem; color: #60a5fa; margin-top: 3px; }
+    .forecast-day .precip { font-size: 0.8rem; color: #60a5fa; margin-top: 3px; }
 
     /* Alert styles */
     .alert-content { font-size: 0.85rem; line-height: 1.4; }
@@ -249,7 +252,7 @@
     .alert-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
     .alert-water { color: #60a5fa; }
     .alert-water-warning { color: #f97316; }
-    .alert-water-danger { color: #ef4444; }
+    .alert-water-danger { color: #f87171; }
     .alert-aircraft-link { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: background 0.2s; }
     .alert-aircraft-link .alert-title { color: #60a5fa; }
     .alert-police-link { transition: background 0.2s; }
@@ -267,14 +270,14 @@
       background: #1a1a2e;
       border-radius: 8px;
     }
-    .water-item .reservoir-name { font-size: 0.75rem; color: #888; margin-bottom: 8px; font-weight: 500; }
+    .water-item .reservoir-name { font-size: 0.75rem; color: #a3a3b5; margin-bottom: 8px; }
     .water-item .water-level { font-size: 1.1rem; font-weight: bold; }
-    .water-item .water-ref { font-size: 0.65rem; color: #666; margin-top: 4px; }
+    .water-item .water-ref { font-size: 0.75rem; color: #a3a3b5; margin-top: 4px; }
     .water-item .fill-pct { font-size: 1.3rem; font-weight: bold; margin-top: 6px; }
     .water-item .water-trend { font-size: 1rem; margin-left: 5px; }
     .water-trend-up { color: #4ade80; }
     .water-trend-down { color: #60a5fa; }
-    .water-trend-stable { color: #888; }
+    .water-trend-stable { color: #a3a3b5; }
     .water-item .fill-bar {
       height: 4px;
       background: #333;
@@ -304,12 +307,21 @@
     .police-item:last-child { margin-bottom: 0; }
     .police-item .police-title { font-size: 0.85rem; font-weight: bold; color: #f59e0b; margin-bottom: 5px; }
     .police-item .police-desc { font-size: 0.8rem; color: #aaa; line-height: 1.4; }
-    .police-item .police-time { font-size: 0.7rem; color: #666; margin-top: 5px; }
+    .police-item .police-time { font-size: 0.75rem; color: #a3a3b5; margin-top: 5px; }
 
+    /* v1.10.32: accessibility */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    label.stat-label { display: block; }
+    :focus-visible { outline: 2px solid #fbbf24; outline-offset: 2px; border-radius: 4px; }
+    .value, .stat-value, .stat-detail, .temp-range, .water-level, .fill-pct, #lastUpdate { font-variant-numeric: tabular-nums; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
+    }
     .calc-input { width: 100%; max-width: 90px; min-height: 44px; padding: 8px 4px; font-size: 16px;
-      border-radius: 5px; border: 1px solid #444; background: #1a1a2e; color: #eee; text-align: center; }
+      border-radius: 5px; border: 1px solid #7a7a95; background: #1a1a2e; color: #eee; text-align: center; }
     .calc-btn { min-height: 44px; padding: 10px 28px; font-size: 1rem; border-radius: 5px; border: none;
-      background: #a855f7; color: #fff; font-weight: bold; cursor: pointer; }
+      background: #9333ea; color: #fff; font-weight: bold; cursor: pointer; }
     .stat-value { white-space: nowrap; }
     .section-fold > summary { min-height: 44px; align-items: center; }
 
@@ -408,29 +420,29 @@
   </style>
 </head>
 <body>
-  <div class="header-container">
+  <header class="header-container">
     <div class="header-title">
-      <h1>🌤️ Værdata Siljan</h1>
+      <h1><span aria-hidden="true">🌤️</span> Værdata Siljan</h1>
       <div class="last-updated">Sist oppdatert: <span id="lastUpdate">--</span></div>
     </div>
     <div class="podcast-widget">
-      <img src="weather/cover.jpg" alt="Podcast" id="podcastCover">
+      <img src="weather/cover.jpg" alt="" id="podcastCover">
       <div class="podcast-info-mini">
         <span class="podcast-title-mini">🎙️ Værpodcast</span>
         <span class="podcast-date-mini" id="podcastDate">--</span>
       </div>
       <div class="podcast-times">
-        <button class="podcast-time-btn" id="podcastBtn07" data-hour="07" disabled>07:00</button>
-        <button class="podcast-time-btn" id="podcastBtn12" data-hour="12" disabled>12:00</button>
-        <button class="podcast-time-btn" id="podcastBtn18" data-hour="18" disabled>18:00</button>
+        <button class="podcast-time-btn" id="podcastBtn07" data-hour="07" aria-label="Sending kl. 07" aria-pressed="false" disabled>07:00</button>
+        <button class="podcast-time-btn" id="podcastBtn12" data-hour="12" aria-label="Sending kl. 12" aria-pressed="false" disabled>12:00</button>
+        <button class="podcast-time-btn" id="podcastBtn18" data-hour="18" aria-label="Sending kl. 18" aria-pressed="false" disabled>18:00</button>
       </div>
       <div class="podcast-controls">
-        <button class="podcast-play-btn" id="podcastPlayBtn" title="Spill av">▶</button>
-        <a href="https://open.spotify.com/show/0rjXjydLj65MBu1WXaKmLm" target="_blank" class="podcast-link spotify" title="Spotify">🎵</a>
-        <a href="weather/podcast.rss" target="_blank" class="podcast-link rss" title="RSS Feed">📻</a>
+        <button class="podcast-play-btn" id="podcastPlayBtn" title="Spill av" aria-label="Spill av værpodcast">▶</button>
+        <a href="https://open.spotify.com/show/0rjXjydLj65MBu1WXaKmLm" target="_blank" class="podcast-link spotify" title="Spotify" rel="noopener" aria-label="Værpodcast på Spotify (åpnes i ny fane)">🎵</a>
+        <a href="weather/podcast.rss" target="_blank" class="podcast-link rss" title="RSS Feed" rel="noopener" aria-label="RSS-feed for værpodcast (åpnes i ny fane)">📻</a>
       </div>
     </div>
-  </div>
+  </header>
   <audio id="podcastAudio"></audio>
 
   <nav class="section-nav" aria-label="Seksjoner">
@@ -444,6 +456,7 @@
     <a href="#sec-solceller">Solceller</a>
   </nav>
 
+  <main>
   <!-- Farevarsler øverst -->
   <div class="grid" style="margin-bottom: 15px;">
     <div class="card alert compact" id="alertCard" style="grid-column: 1 / -1;">
@@ -451,14 +464,15 @@
       <div class="alert-content" id="alertContent">
         <span class="alert-none">✓ Ingen aktive varsler</span>
       </div>
+      <div id="alertAnnounce" class="sr-only" role="status"></div>
     </div>
   </div>
 
-  <div class="section-title" id="sec-na"><span>Været nå</span> <span class="section-src">egen stasjon</span></div>
+  <h2 class="section-title" id="sec-na"><span>Været nå</span> <span class="section-src">egen stasjon</span></h2>
   <div class="grid" id="gridNow">
     <!-- Temperatur -->
     <div class="card hero">
-      <h2>🌡️ Temperatur</h2>
+      <h3><span aria-hidden="true">🌡️</span> Temperatur</h3>
       <span class="value" id="temp">--</span><span class="unit">°C</span>
       <div class="stats">
         <div class="stat">
@@ -481,7 +495,7 @@
 
     <!-- Føles som / Komfort -->
     <div class="card comfort">
-      <h2>🌡️ Føles som</h2>
+      <h3><span aria-hidden="true">🌡️</span> Føles som</h3>
       <span class="value" id="feelsLike">--</span><span class="unit">°C</span>
       <div class="beaufort" id="comfortLevel">--</div>
       <div class="stats">
@@ -506,7 +520,7 @@
         </div>
         <div class="stat">
           <div class="stat-label">Anbefaling</div>
-          <div class="stat-value" id="comfortAdviceIcon">--</div>
+          <div class="stat-value" id="comfortAdviceIcon" aria-hidden="true">--</div>
           <div class="stat-detail" id="comfortAdvice">--</div>
         </div>
       </div>
@@ -514,9 +528,9 @@
 
     <!-- Vind (v1.10.29: retning og kast flyttet hit fra "Vindkast & Retning") -->
     <div class="card">
-      <h2>💨 Vind</h2>
+      <h3><span aria-hidden="true">💨</span> Vind</h3>
       <span class="value" id="wind">--</span><span class="unit">m/s</span>
-      <span class="wind-now-dir"><span class="wind-dir" id="windDirArrow">--</span> <span id="windDirText">--</span></span>
+      <span class="wind-now-dir"><span class="wind-dir" id="windDirArrow" aria-hidden="true">--</span> <span id="windDirText">--</span></span>
       <div class="beaufort" id="beaufort">--</div>
       <div class="stats">
         <div class="stat">
@@ -554,7 +568,7 @@
 
     <!-- Nedbør -->
     <div class="card">
-      <h2>🌧️ Nedbør</h2>
+      <h3><span aria-hidden="true">🌧️</span> Nedbør</h3>
       <span class="value" id="rainToday">--</span><span class="unit">mm i dag</span>
       <div class="stats">
         <div class="stat">
@@ -574,7 +588,7 @@
 
     <!-- Fuktighet & Dugpunkt -->
     <div class="card">
-      <h2>💧 Fuktighet</h2>
+      <h3><span aria-hidden="true">💧</span> Fuktighet</h3>
       <span class="value" id="hum">--</span><span class="unit">%</span>
       <div class="stats">
         <div class="stat">
@@ -595,7 +609,7 @@
 
     <!-- Trykk -->
     <div class="card">
-      <h2>🌀 Lufttrykk</h2>
+      <h3><span aria-hidden="true">🌀</span> Lufttrykk</h3>
       <span class="value" id="press">--</span><span class="unit">hPa</span>
       <div class="stats">
         <div class="stat">
@@ -615,11 +629,11 @@
     </div>
   </div>
 
-  <div class="section-title" id="sec-varsel"><span>Varsel</span> <span class="section-src">met.no</span></div>
+  <h2 class="section-title" id="sec-varsel"><span>Varsel</span> <span class="section-src">met.no</span></h2>
   <div class="grid">
     <!-- 7-dagers varsel -->
     <div class="card metno" style="grid-column: 1 / -1;">
-      <h2>📅 Værvarsel 7 dager</h2>
+      <h3><span aria-hidden="true">📅</span> Værvarsel 7 dager</h3>
       <div class="forecast-grid" id="forecastGrid">
         <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
         <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
@@ -633,7 +647,7 @@
 
     <!-- Skydekke & Tåke -->
     <div class="card metno">
-      <h2>☁️ Skydekke & Tåke</h2>
+      <h3><span aria-hidden="true">☁️</span> Skydekke & Tåke</h3>
       <span class="value" id="clouds">--</span><span class="unit">%</span>
       <div class="stats">
         <div class="stat">
@@ -655,7 +669,7 @@
 
     <!-- Nedbør & Torden sannsynlighet -->
     <div class="card metno">
-      <h2>🌧️ Sannsynlighet & Varsel</h2>
+      <h3><span aria-hidden="true">🌧️</span> Sannsynlighet & Varsel</h3>
       <div class="stats-2">
         <div class="stat">
           <div class="stat-label">Nedbør nå</div>
@@ -680,11 +694,11 @@
     </div>
   </div>
 
-  <div class="section-title" id="sec-malinger"><span>Flere målinger</span> <span class="section-src">egen stasjon</span></div>
+  <h2 class="section-title" id="sec-malinger"><span>Flere målinger</span> <span class="section-src">egen stasjon</span></h2>
   <div class="grid" id="gridMore">
     <!-- Irradiance -->
     <div class="card">
-      <h2>☀️ Solinnstråling</h2>
+      <h3><span aria-hidden="true">☀️</span> Solinnstråling</h3>
       <span class="value" id="irr">--</span><span class="unit">W/m²</span>
       <div class="stats">
         <div class="stat">
@@ -715,7 +729,7 @@
 
     <!-- UV-indeks -->
     <div class="card">
-      <h2>☀️ UV-indeks</h2>
+      <h3><span aria-hidden="true">☀️</span> UV-indeks</h3>
       <span class="value" id="uv">--</span>
       <div class="beaufort" id="uvLevel">--</div>
       <div class="stats">
@@ -739,7 +753,7 @@
 
     <!-- Tele & jordtemperatur (v1.10.27) -->
     <div class="card frost" id="frostCard">
-      <h2><span aria-hidden="true">🧊</span> Tele &amp; jordtemperatur</h2>
+      <h3><span aria-hidden="true">🧊</span> Tele &amp; jordtemperatur</h3>
       <span class="value" id="frostDepth">--</span><span class="unit" id="frostDepthUnit"></span>
       <div class="stats-4">
         <div class="stat"><div class="stat-label">Overflate</div><div class="stat-value" id="soil0">--</div></div>
@@ -755,11 +769,11 @@
     </div>
   </div>
 
-  <div class="section-title" id="sec-himmel"><span>Sol, måne og nordlys</span> <span class="section-src">beregnet · NOAA</span></div>
+  <h2 class="section-title" id="sec-himmel"><span>Sol, måne og nordlys</span> <span class="section-src">beregnet · NOAA</span></h2>
   <div class="grid">
     <!-- Dagslys -->
     <div class="card daylight">
-      <h2>🌅 Dagslys</h2>
+      <h3><span aria-hidden="true">🌅</span> Dagslys</h3>
       <span class="value" id="dayLength">--</span><span class="unit" id="dayLengthUnit">t</span>
       <div class="sun-times" id="sunTimes">☀️ -- → --</div>
       <div class="stats">
@@ -792,8 +806,8 @@
 
     <!-- Måne & Astro -->
     <div class="card moon">
-      <h2>🌙 Måne & Astro</h2>
-      <span class="moon-phase" id="moonIcon">🌑</span>
+      <h3><span aria-hidden="true">🌙</span> Måne & Astro</h3>
+      <span class="moon-phase" id="moonIcon" aria-hidden="true">🌑</span>
       <div class="beaufort" id="moonPhase">--</div>
       <div class="stats">
         <div class="stat">
@@ -825,7 +839,7 @@
 
     <!-- Nordlys -->
     <div class="card aurora">
-      <h2>🌌 Nordlys</h2>
+      <h3><span aria-hidden="true">🌌</span> Nordlys</h3>
       <span class="value" id="kpIndex">--</span>
       <div class="beaufort" id="auroraLevel">--</div>
       <div class="stats-2">
@@ -854,17 +868,17 @@
         </div>
       </div>
       <div class="card-footer">
-        Kilde: <a href="https://www.swpc.noaa.gov/" target="_blank" style="color: #888;">NOAA Space Weather</a>
+        Kilde: <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener">NOAA Space Weather<span class="sr-only"> (åpnes i ny fane)</span></a>
       </div>
     </div>
   </div>
 
   <details class="section-fold" id="sec-statistikk" open>
-    <summary class="section-title"><span>Statistikk og rekorder</span> <span class="section-src">egen stasjon · regionalt</span></summary>
+    <summary class="section-title"><h2>Statistikk og rekorder</h2> <span class="section-src">egen stasjon · regionalt</span></summary>
   <div class="grid">
     <!-- Temperatur-statistikk -->
     <div class="card records">
-      <h2>📈 Temperatur-statistikk</h2>
+      <h3><span aria-hidden="true">📈</span> Temperatur-statistikk</h3>
       <div class="stats">
         <div class="stat">
           <div class="stat-label">Frostdager</div>
@@ -896,7 +910,7 @@
 
     <!-- Nedbør statistikk -->
     <div class="card rainstats">
-      <h2>📊 Nedbør statistikk</h2>
+      <h3><span aria-hidden="true">📊</span> Nedbør statistikk</h3>
       <div class="stats">
         <div class="stat">
           <div class="stat-label">Maks dag 7d</div>
@@ -930,7 +944,7 @@
 
     <!-- Siljan Temperatur Regional -->
     <div class="card regional">
-      <h2>🌡️ Temperatur (regionalt)</h2>
+      <h3><span aria-hidden="true">🌡️</span> Temperatur (regionalt)</h3>
       <div class="stats-2">
         <div class="stat">
           <div class="stat-label">Min i dag</div>
@@ -967,7 +981,7 @@
 
     <!-- Siljan Vind Regional -->
     <div class="card regional">
-      <h2>💨 Vind (regionalt maks)</h2>
+      <h3><span aria-hidden="true">💨</span> Vind (regionalt maks)</h3>
       <span class="value" id="siljanWindMax">--</span><span class="unit">m/s</span>
       <div class="beaufort" id="siljanWindBeaufort">--</div>
       <div class="stats">
@@ -991,7 +1005,7 @@
 
     <!-- Siljan Nedbør Regional -->
     <div class="card regional">
-      <h2>🌧️ Nedbør (regionalt maks)</h2>
+      <h3><span aria-hidden="true">🌧️</span> Nedbør (regionalt maks)</h3>
       <span class="value" id="siljanRainMax">--</span><span class="unit">mm i dag</span>
       <div class="stats">
         <div class="stat">
@@ -1014,10 +1028,10 @@
   </div>
   </details>
 
-  <div class="section-title" id="sec-vassdrag"><span>Vassdraget</span> <span class="section-src">Skagerak Kraft</span></div>
+  <h2 class="section-title" id="sec-vassdrag"><span>Vassdraget</span> <span class="section-src">Skagerak Kraft</span></h2>
   <div class="grid">
     <div class="card water" style="grid-column: 1 / -1;">
-      <h2>🏔️ Magasinfylling</h2>
+      <h3><span aria-hidden="true">🏔️</span> Magasinfylling</h3>
       <div class="water-grid" id="waterGrid">
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
@@ -1026,17 +1040,17 @@
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
       </div>
       <div class="card-footer">
-        Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" style="color: #888;">Skagerak Kraft</a> og egne beregninger · 
+        Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" rel="noopener">Skagerak Kraft<span class="sr-only"> (åpnes i ny fane)</span></a> og egne beregninger · 
         Fyllingsgrad: LRV = 0%, HRV = 100% · 
         Oppdatert: <span id="waterUpdate">--</span> · Energi (GWh) er et overslag
       </div>
     </div>
   </div>
 
-  <div class="section-title" id="sec-politi"><span>Politiloggen</span> <span class="section-src">politiet.no</span></div>
+  <h2 class="section-title" id="sec-politi"><span>Politiloggen</span> <span class="section-src">politiet.no</span></h2>
   <div class="grid">
     <div class="card police" id="policeCard" style="grid-column: 1 / -1;">
-      <h2>📋 Siste hendelser</h2>
+      <h3><span aria-hidden="true">📋</span> Siste hendelser</h3>
       <div class="police-list" id="policeList">
         <div class="police-item">
           <div class="police-title">--</div>
@@ -1044,16 +1058,16 @@
         </div>
       </div>
       <div class="card-footer">
-        Kilde: <a href="https://www.politiet.no/politiloggen" target="_blank" style="color: #888;">Politiet.no</a>
+        Kilde: <a href="https://www.politiet.no/politiloggen" target="_blank" rel="noopener">Politiet.no<span class="sr-only"> (åpnes i ny fane)</span></a>
       </div>
     </div>
   </div>
 
   <details class="section-fold" id="sec-solceller" open>
-    <summary class="section-title"><span>Solceller</span> <span class="section-src">eget anlegg</span></summary>
+    <summary class="section-title"><h2>Solceller</h2> <span class="section-src">eget anlegg</span></summary>
   <div class="grid">
     <div class="card solar">
-      <h2>🔌 Mitt anlegg (7.2 kWp)</h2>
+      <h3><span aria-hidden="true">🔌</span> Mitt anlegg (7.2 kWp)</h3>
       <span class="value" id="solarInverter">--</span><span class="unit">kW</span>
       <div class="stats">
         <div class="stat">
@@ -1075,18 +1089,18 @@
     </div>
 
     <div class="card calculator">
-      <h2>🧮 PV-kalkulator</h2>
+      <h3><span aria-hidden="true">🧮</span> PV-kalkulator</h3>
       <div class="stats">
         <div class="stat">
-          <div class="stat-label">Din kWp</div>
+          <label class="stat-label" for="calcKwp">Din kWp</label>
           <input type="number" id="calcKwp" class="calc-input" inputmode="decimal" value="7.2" step="0.1" min="0.1" max="50">
         </div>
         <div class="stat">
-          <div class="stat-label">Takvinkel (°)</div>
+          <label class="stat-label" for="calcTilt">Takvinkel (°)</label>
           <input type="number" id="calcTilt" class="calc-input" inputmode="numeric" value="33" step="1" min="0" max="90">
         </div>
         <div class="stat">
-          <div class="stat-label">Azimut (°)</div>
+          <label class="stat-label" for="calcAzimuth">Azimut (°)</label>
           <input type="number" id="calcAzimuth" class="calc-input" inputmode="numeric" value="180" step="1" min="0" max="360">
         </div>
       </div>
@@ -1095,7 +1109,7 @@
       </div>
       <div style="text-align: center; margin-top: 15px;">
         <div class="stat-label">Estimert produksjon nå</div>
-        <div class="value sun" id="calcResult">--</div>
+        <div class="value sun" id="calcResult" role="status">--</div>
         <div class="unit">kW</div>
       </div>
       <div class="card-footer">
@@ -1104,6 +1118,7 @@
     </div>
   </div>
   </details>
+  </main>
 
   <script>
     // Supabase config v1.10
@@ -1146,6 +1161,11 @@
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
     //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
+    //   v1.10.32 - Accessibility after design review (agent 3): muted text #a3a3b5 (was #888/#666),
+    //              12 px minimum text, header/main landmarks, section titles h2 and card titles h3,
+    //              labels on PV inputs, aria on podcast controls, weather type as text for screen
+    //              readers, alert level and reservoir state as text, hazard alerts announced,
+    //              focus ring, reduced motion, tabular numbers
     //   v1.10.31 - Mobile after design review (agent 2): podcast widget in two rows with 44 px
     //              touch targets, all 7 forecast days (swipe), reservoirs as rows on phones,
     //              tighter spacing, PV inputs 16 px (no iOS zoom), police text clamped to 3 lines
@@ -1865,6 +1885,26 @@
       fog: '🌫️',
     };
 
+    // v1.10.32: weather type as text (screen readers + tooltip)
+    const weatherTexts = {
+      clearsky: 'Klarvær', fair: 'Lettskyet', partlycloudy: 'Delvis skyet', cloudy: 'Skyet', fog: 'Tåke',
+      lightrainshowers: 'Lette regnbyger', rainshowers: 'Regnbyger', heavyrainshowers: 'Kraftige regnbyger',
+      lightsleetshowers: 'Lette sluddbyger', sleetshowers: 'Sluddbyger', heavysleetshowers: 'Kraftige sluddbyger',
+      lightsnowshowers: 'Lette snøbyger', snowshowers: 'Snøbyger', heavysnowshowers: 'Kraftige snøbyger',
+      lightrain: 'Lett regn', rain: 'Regn', heavyrain: 'Kraftig regn',
+      lightsleet: 'Lett sludd', sleet: 'Sludd', heavysleet: 'Kraftig sludd',
+      lightsnow: 'Lett snø', snow: 'Snø', heavysnow: 'Kraftig snø'
+    };
+    function getWeatherText(symbolCode) {
+      if (!symbolCode) return 'Ukjent vær';
+      let base = symbolCode.replace(/_day|_night|_polartwilight/g, '');
+      let thunder = false;
+      if (base.endsWith('andthunder')) { thunder = true; base = base.replace('andthunder', ''); }
+      // met.no has a few irregular codes, e.g. "lightssleetshowersandthunder"
+      const txt = weatherTexts[base] || weatherTexts[base.replace('lightss', 'lights')] || 'Ukjent vær';
+      return thunder ? txt + ' og torden' : txt;
+    }
+
     function getWeatherIcon(symbolCode) {
       if (!symbolCode) return '❓';
       const base = symbolCode.replace(/_day|_night|_polartwilight/g, '');
@@ -2108,12 +2148,12 @@
 
     // v1.8: Updated water level color logic
     function getFillColor(pct) {
-      if (pct === null || pct === undefined) return { class: '', color: '#666' };
-      if (pct < 0) return { class: 'fill-critical', color: '#ef4444' };       // Under LRV: Red
-      if (pct < 10) return { class: 'fill-low', color: '#f97316' };           // 0-10%: Orange
-      if (pct < 90) return { class: 'fill-normal', color: '#4ade80' };        // 10-90%: Green
-      if (pct <= 100) return { class: 'fill-high', color: '#eab308' };        // 90-100%: Yellow
-      return { class: 'fill-over', color: '#f97316' };                        // 100%+: Orange
+      if (pct === null || pct === undefined) return { class: '', color: '#666', label: '' };
+      if (pct < 0) return { class: 'fill-critical', color: '#ef4444', label: 'Under LRV' };   // Red
+      if (pct < 10) return { class: 'fill-low', color: '#f97316', label: 'Lav' };             // 0-10%: Orange
+      if (pct < 90) return { class: 'fill-normal', color: '#4ade80', label: 'Normal' };       // 10-90%: Green
+      if (pct <= 100) return { class: 'fill-high', color: '#eab308', label: 'Høy' };          // 90-100%: Yellow
+      return { class: 'fill-over', color: '#f97316', label: 'Over HRV' };                     // 100%+: Orange
     }
 
     // v1.8: Get water alert level
@@ -2128,9 +2168,9 @@
     function getWaterTrend(current, old) {
       if (current === null || old === null) return { arrow: '', class: '' };
       const diff = current - old;
-      if (diff > 0.1) return { arrow: '↑', class: 'water-trend-up' };
-      if (diff < -0.1) return { arrow: '↓', class: 'water-trend-down' };
-      return { arrow: '→', class: 'water-trend-stable' };
+      if (diff > 0.1) return { arrow: '↑', class: 'water-trend-up', label: 'stigende' };
+      if (diff < -0.1) return { arrow: '↓', class: 'water-trend-down', label: 'synkende' };
+      return { arrow: '→', class: 'water-trend-stable', label: 'stabil' };
     }
 
     // v1.10.9: Calculate stored hydropower energy
@@ -2252,6 +2292,11 @@
       const hazards = [...metAlerts, ...waterAlerts];
       const events = [...policeAlerts, ...aircraftAlerts];
 
+      // v1.10.32: screen readers hear hazard alerts only, and only when they change
+      const announce = document.getElementById('alertAnnounce');
+      const announceMsg = hazards.map(a => a.title).join('. ');
+      if (announce.textContent !== announceMsg) announce.textContent = announceMsg;
+
       if (hazards.length === 0 && events.length === 0) {
         alertCard.className = 'card alert compact';
         alertContent.innerHTML = '<span class="alert-none">✓ Ingen aktive varsler</span>';
@@ -2272,9 +2317,10 @@
       }
 
       let html = '';
+      const levelText = { red: 'Rødt nivå', orange: 'Oransje nivå', yellow: 'Gult nivå' };
       for (const alert of hazards) {
         html += `<div class="alert-item">
-            <div class="alert-title ${alert.titleClass || ''}">${alert.title}</div>
+            <div class="alert-title ${alert.titleClass || ''}">${alert.title} <span class="alert-level">(${levelText[alert.severity] || 'Gult nivå'})</span></div>
             <div class="alert-desc">${alert.desc}</div>
           </div>`;
       }
@@ -2435,7 +2481,7 @@
               <div class="reservoir-name">${reservoir}</div>
               <div class="water-level">${fmt(level, 2)} m</div>
               <div class="water-ref">LRV: ${fmt(lrv, 1)} · HRV: ${fmt(hrv, 1)}</div>
-              <div class="fill-pct ${fillStyle.class}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%<span class="water-trend ${trend.class}">${trend.arrow}</span></div>
+              <div class="fill-pct ${fillStyle.class}" title="${fillStyle.label}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%<span class="sr-only"> ${fillStyle.label}</span><span class="water-trend ${trend.class}"${trend.label ? ` role="img" aria-label="${trend.label}" title="${trend.label}"` : ''}>${trend.arrow}</span></div>
               <div class="fill-bar">
                 <div class="fill-bar-inner" style="width: ${barWidth}%; background: ${fillStyle.color};"></div>
               </div>
@@ -2488,7 +2534,7 @@
         if (data.length === 0) {
           policeList.innerHTML = `
             <div class="police-item">
-              <div class="police-desc" style="color: #666;">Ingen hendelser registrert</div>
+              <div class="police-desc" style="color: #a3a3b5;">Ingen hendelser registrert</div>
             </div>
           `;
           updateAlertDisplay();
@@ -2534,7 +2580,7 @@
             <div class="police-title">${c.title}</div>`;
           for (const upd of c.updates) {
             const timeStr = fmtDateTime(upd.time);
-            html += `<div class="police-desc">• ${upd.desc} <span style="color:#666;font-size:0.7rem;">(${timeStr})</span></div>`;
+            html += `<div class="police-desc">• ${upd.desc} <span style="color: #a3a3b5;font-size:0.75rem;">(${timeStr})</span></div>`;
           }
           html += `</div>`;
         }
@@ -2681,7 +2727,7 @@
             const maxCls = getTempClass(maxTemp);
             dayEl.innerHTML = `
               <div class="day-name">${fmtDayName(day.time)}</div>
-              <div class="weather-icon">${getWeatherIcon(day.symbol)}</div>
+              <div class="weather-icon" role="img" aria-label="${getWeatherText(day.symbol)}" title="${getWeatherText(day.symbol)}">${getWeatherIcon(day.symbol)}</div>
               <div class="temp-range">
                 <span class="${minCls}">${fmt(minTemp, 0)}°</span> / 
                 <span class="${maxCls}">${fmt(maxTemp, 0)}°</span>
@@ -3061,11 +3107,12 @@
       ['07', '12', '18'].forEach(slot => {
         const btn = document.getElementById('podcastBtn' + slot);
         btn.classList.toggle('active', slot === hour);
+        btn.setAttribute('aria-pressed', slot === hour ? 'true' : 'false');
       });
 
       // Reset play state
       podcastPlaying = false;
-      podcastPlayBtn.textContent = '▶';
+      podcastPlayBtn.textContent = '▶'; podcastPlayBtn.setAttribute('aria-label', 'Spill av værpodcast');
     }
 
     // Add click handlers for time buttons
@@ -3078,17 +3125,17 @@
     podcastPlayBtn.addEventListener('click', () => {
       if (podcastPlaying) {
         podcastAudio.pause();
-        podcastPlayBtn.textContent = '▶';
+        podcastPlayBtn.textContent = '▶'; podcastPlayBtn.setAttribute('aria-label', 'Spill av værpodcast');
         podcastPlaying = false;
       } else {
         podcastAudio.play();
-        podcastPlayBtn.textContent = '⏸';
+        podcastPlayBtn.textContent = '⏸'; podcastPlayBtn.setAttribute('aria-label', 'Pause værpodcast');
         podcastPlaying = true;
       }
     });
 
     podcastAudio.addEventListener('ended', () => {
-      podcastPlayBtn.textContent = '▶';
+      podcastPlayBtn.textContent = '▶'; podcastPlayBtn.setAttribute('aria-label', 'Spill av værpodcast');
       podcastPlaying = false;
     });
 
