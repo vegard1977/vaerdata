@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.32 -->
+<!-- Værdata Siljan v1.10.33 -->
 <!DOCTYPE html>
 <html lang="nb">
 <head>
@@ -17,6 +17,8 @@
     }
     h1 { margin-bottom: 2px; font-size: 1.5rem; }
     .last-updated { color: #aaa; font-size: 0.85rem; }
+    .last-updated.stale { color: #fbbf24; }
+    .stale-value { opacity: 0.5; }
     .updated { text-align: center; color: #a3a3b5; font-size: 0.85rem; margin-bottom: 20px; }
 
     /* Podcast widget */
@@ -193,7 +195,7 @@
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
     .card.alert.red { border-left-color: #ef4444; background: #2a1e1e; }
     .value { font-size: 2rem; font-weight: bold; }
-    .unit { font-size: 0.9rem; color: #a3a3b5; }
+    .unit { font-size: 0.9rem; color: #a3a3b5; margin-left: 0.25em; }
     .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
     .stats-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
@@ -223,6 +225,7 @@
     .fill-normal { color: #4ade80; }
     .fill-high { color: #eab308; }
     .fill-over { color: #f97316; }
+    .fill-danger { color: #f87171; }
 
     /* Forecast styles */
     .forecast-grid {
@@ -279,12 +282,14 @@
     .water-trend-down { color: #60a5fa; }
     .water-trend-stable { color: #a3a3b5; }
     .water-item .fill-bar {
-      height: 4px;
+      position: relative;
+      height: 6px;
       background: #333;
-      border-radius: 2px;
+      border-radius: 3px;
       margin-top: 6px;
       overflow: hidden;
     }
+    .water-item .fill-bar-hrv { position: absolute; left: 80%; top: 0; bottom: 0; width: 2px; background: #eee; }
     .water-item .fill-bar-inner {
       height: 100%;
       border-radius: 2px;
@@ -504,7 +509,7 @@
           <div class="stat-value" id="actualTemp">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label" id="chillHeatLabel">Wind chill</div>
+          <div class="stat-label" id="chillHeatLabel">Vindavkjøling</div>
           <div class="stat-value" id="chillHeatValue">--</div>
         </div>
         <div class="stat">
@@ -597,7 +602,7 @@
         </div>
         <div class="stat">
           <div class="stat-label">24t min/max</div>
-          <div class="stat-value"><span id="hum24min">--</span>/<span id="hum24max">--</span></div>
+          <div class="stat-value"><span id="hum24min">--</span> / <span id="hum24max">--</span></div>
           <div class="stat-detail" id="hum24times">--</div>
         </div>
         <div class="stat">
@@ -618,7 +623,7 @@
         </div>
         <div class="stat">
           <div class="stat-label">24t min/max</div>
-          <div class="stat-value"><span id="press24min">--</span>/<span id="press24max">--</span></div>
+          <div class="stat-value"><span id="press24min">--</span> / <span id="press24max">--</span></div>
           <div class="stat-detail" id="press24times">--</div>
         </div>
         <div class="stat">
@@ -669,10 +674,10 @@
 
     <!-- Nedbør & Torden sannsynlighet -->
     <div class="card metno">
-      <h3><span aria-hidden="true">🌧️</span> Sannsynlighet & Varsel</h3>
+      <h3><span aria-hidden="true">🌧️</span> Nedbør og torden</h3>
       <div class="stats-2">
         <div class="stat">
-          <div class="stat-label">Nedbør nå</div>
+          <div class="stat-label">Sannsynlighet nedbør</div>
           <div class="stat-value" id="precipProb">--</div>
         </div>
         <div class="stat">
@@ -682,7 +687,7 @@
       </div>
       <div class="stats-2">
         <div class="stat">
-          <div class="stat-label">Torden nå</div>
+          <div class="stat-label">Sannsynlighet torden</div>
           <div class="stat-value" id="thunderProb">--</div>
         </div>
         <div class="stat">
@@ -706,7 +711,7 @@
           <div class="stat-value sun" id="lux">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Maks i dag</div>
+          <div class="stat-label">Maks 24t</div>
           <div class="stat-value" id="irrMax">--</div>
           <div class="stat-detail" id="irrMaxTime">--</div>
         </div>
@@ -806,7 +811,7 @@
 
     <!-- Måne & Astro -->
     <div class="card moon">
-      <h3><span aria-hidden="true">🌙</span> Måne & Astro</h3>
+      <h3><span aria-hidden="true">🌙</span> Måne</h3>
       <span class="moon-phase" id="moonIcon" aria-hidden="true">🌑</span>
       <div class="beaufort" id="moonPhase">--</div>
       <div class="stats">
@@ -863,7 +868,7 @@
           <div class="stat-value" id="auroraMoon">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Mørketid</div>
+          <div class="stat-label">Mørkt nå</div>
           <div class="stat-value" id="auroraDark">--</div>
         </div>
       </div>
@@ -886,14 +891,14 @@
           <div class="stat-detail">siste 30d</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Kuldegrader</div>
+          <div class="stat-label">Kuldesum</div>
           <div class="stat-value" id="coldDegrees">--</div>
-          <div class="stat-detail">sum 30d</div>
+          <div class="stat-detail">døgngrader 30d</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Varmegrader</div>
+          <div class="stat-label">Varmesum</div>
           <div class="stat-value" id="warmDegrees">--</div>
-          <div class="stat-detail">sum 30d</div>
+          <div class="stat-detail">døgngrader 30d</div>
         </div>
       </div>
       <div class="stats-2">
@@ -925,7 +930,7 @@
         <div class="stat">
           <div class="stat-label">Regndager</div>
           <div class="stat-value"><span id="rainDays7">--</span> / <span id="rainDays30">--</span></div>
-          <div class="stat-detail">(7d / 30d)</div>
+          <div class="stat-detail">(7d / 30d, over 0,2 mm)</div>
         </div>
       </div>
       <div class="stats-2">
@@ -951,7 +956,7 @@
           <div class="stat-value" id="siljanTempMin">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Max i dag</div>
+          <div class="stat-label">Maks i dag</div>
           <div class="stat-value" id="siljanTempMax">--</div>
         </div>
       </div>
@@ -1040,9 +1045,9 @@
         <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
       </div>
       <div class="card-footer">
-        Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" rel="noopener">Skagerak Kraft<span class="sr-only"> (åpnes i ny fane)</span></a> og egne beregninger · 
-        Fyllingsgrad: LRV = 0%, HRV = 100% · 
-        Oppdatert: <span id="waterUpdate">--</span> · Energi (GWh) er et overslag
+        Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" rel="noopener">Skagerak Kraft<span class="sr-only"> (åpnes i ny fane)</span></a> og egne beregninger ·
+        Fyllingsgrad: LRV = 0%, HRV = 100% ·
+        Oppdatert: <span id="waterUpdate">--</span> · Energi (GWh) er et overslag · Pil: endring siste 3 døgn · Hvit strek: HRV
       </div>
     </div>
   </div>
@@ -1079,7 +1084,7 @@
           <div class="stat-value" id="solarPerformance">--</div>
         </div>
         <div class="stat">
-          <div class="stat-label">Irradiance</div>
+          <div class="stat-label">Solinnstråling</div>
           <div class="stat-value" id="solarIrr">--</div>
         </div>
       </div>
@@ -1089,10 +1094,10 @@
     </div>
 
     <div class="card calculator">
-      <h3><span aria-hidden="true">🧮</span> PV-kalkulator</h3>
+      <h3><span aria-hidden="true">🧮</span> Solcellekalkulator</h3>
       <div class="stats">
         <div class="stat">
-          <label class="stat-label" for="calcKwp">Din kWp</label>
+          <label class="stat-label" for="calcKwp">Installert effekt (kWp)</label>
           <input type="number" id="calcKwp" class="calc-input" inputmode="decimal" value="7.2" step="0.1" min="0.1" max="50">
         </div>
         <div class="stat">
@@ -1161,6 +1166,11 @@
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
     //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
+    //   v1.10.33 - Card content after design review (agent 4): Norwegian number format (comma,
+    //              real minus), Oslo time everywhere, "i går" on 24h times, dates with month for
+    //              30d, units and Norwegian labels, moonrise/moonset from met.no, reservoir bar
+    //              shows above HRV, aurora needs darkness, temperature red only from 20 °C,
+    //              stale data marked
     //   v1.10.32 - Accessibility after design review (agent 3): muted text #a3a3b5 (was #888/#666),
     //              12 px minimum text, header/main landmarks, section titles h2 and card titles h3,
     //              labels on PV inputs, aria on podcast controls, weather type as text for screen
@@ -1182,10 +1192,12 @@
     //              rain stats (days without data, daily rain fixed in weather_summary RPC),
     //              comfort scale above 25 °C, negative zero, Oslo date for daylight lookup
 
-    // v1.10: Temperature color (blue = frost, red = above zero)
+    // v1.10: Temperature color
+    // v1.10.33: blue below zero, neutral 0-20 °C, warm colour from 20 °C (red at +2 °C read as a warning)
     function getTempClass(temp) {
       if (temp === null || temp === undefined) return '';
-      return temp < 0 ? 'temp-cold' : 'temp-warm';
+      if (temp < 0) return 'temp-cold';
+      return temp >= 20 ? 'temp-warm' : '';
     }
 
     // v1.10: Format temp with color
@@ -1326,16 +1338,16 @@
     function formatDayLength(minutes) {
       const hours = Math.floor(minutes / 60);
       const mins = Math.round(minutes % 60);
-      return `${hours}t ${mins}m`;
+      return `${hours} t ${mins} min`;
     }
 
     function formatChange(minutes, forceSign = true) {
       const absMin = Math.abs(minutes);
-      const sign = minutes >= 0 ? '+' : '-';
+      const sign = minutes >= 0 ? '+' : '−';
       if (absMin >= 60) {
         const hours = Math.floor(absMin / 60);
         const mins = Math.round(absMin % 60);
-        return `${forceSign ? sign : ''}${hours}t ${mins}m`;
+        return `${forceSign ? sign : ''}${hours} t ${mins} min`;
       }
       return `${forceSign ? sign : ''}${Math.round(absMin)} min`;
     }
@@ -1400,7 +1412,7 @@
       // Day length display
       const hours = Math.floor(todayDayLength / 60);
       const mins = Math.round(todayDayLength % 60);
-      document.getElementById('dayLength').textContent = `${hours}t ${mins}m`;
+      document.getElementById('dayLength').textContent = `${hours} t ${mins} min`;
       document.getElementById('dayLengthUnit').textContent = '';
 
       // Use Supabase times for sunrise/sunset DISPLAY ONLY (synced with podcast)
@@ -1444,7 +1456,7 @@
 
       // Determine if we're in "getting longer" or "getting shorter" phase
       const summerSolstice = today < solstices.summer ? solstices.summer : nextYearSolstices.summer;
-      const winterSolstice = today < solstices.winter ? solstices.winter : 
+      const winterSolstice = today < solstices.winter ? solstices.winter :
                             (today > solstices.summer ? solstices.winter : getSolstices(year - 1).winter);
 
       const daysGettingLonger = today > solstices.winter || today < solstices.summer;
@@ -1464,7 +1476,7 @@
 
         document.getElementById('toSolsticeLabel').textContent = 'Til sommersolverv';
         document.getElementById('toSolstice').textContent = `${daysTo} dager`;
-        document.getElementById('toSolsticeDate').textContent = '21. jun';
+        document.getElementById('toSolsticeDate').textContent = '21. juni';
       } else {
         // Summer -> Winter: days getting shorter
         const summerSun = calculateSunTimes(solstices.summer, METNO_LAT, METNO_LON);
@@ -1479,7 +1491,7 @@
 
         document.getElementById('toSolsticeLabel').textContent = 'Til vintersolverv';
         document.getElementById('toSolstice').textContent = `${daysTo} dager`;
-        document.getElementById('toSolsticeDate').textContent = '21. des';
+        document.getElementById('toSolsticeDate').textContent = '21. des.';
       }
     }
 
@@ -1512,9 +1524,9 @@
       const c1 = -8.784695, c2 = 1.61139411, c3 = 2.338549;
       const c4 = -0.14611605, c5 = -0.012308094, c6 = -0.016424828;
       const c7 = 0.002211732, c8 = 0.00072546, c9 = -0.000003582;
-      const hi = c1 + c2*tempC + c3*humidity + c4*tempC*humidity + 
-                 c5*tempC*tempC + c6*humidity*humidity + 
-                 c7*tempC*tempC*humidity + c8*tempC*humidity*humidity + 
+      const hi = c1 + c2*tempC + c3*humidity + c4*tempC*humidity +
+                 c5*tempC*tempC + c6*humidity*humidity +
+                 c7*tempC*tempC*humidity + c8*tempC*humidity*humidity +
                  c9*tempC*tempC*humidity*humidity;
       return Math.round(hi * 10) / 10;
     }
@@ -1592,9 +1604,9 @@
       if (phase < 1.85) { name = 'Nymåne'; icon = '🌑'; }
       else if (phase < 7.38) { name = 'Voksende månesigd'; icon = '🌒'; }
       else if (phase < 9.23) { name = 'Første kvarter'; icon = '🌓'; }
-      else if (phase < 14.76) { name = 'Voksende fullmåne'; icon = '🌔'; }
+      else if (phase < 14.76) { name = 'Voksende måne'; icon = '🌔'; }
       else if (phase < 16.61) { name = 'Fullmåne'; icon = '🌕'; }
-      else if (phase < 22.14) { name = 'Minkende fullmåne'; icon = '🌖'; }
+      else if (phase < 22.14) { name = 'Minkende måne'; icon = '🌖'; }
       else if (phase < 23.99) { name = 'Siste kvarter'; icon = '🌗'; }
       else { name = 'Minkende månesigd'; icon = '🌘'; }
 
@@ -1617,7 +1629,7 @@
       if (daysToFull < 0) daysToFull += lunarCycle;
       const nextFull = new Date(date.getTime() + daysToFull * 86400000);
 
-      return { 
+      return {
         nextNew: { date: nextNew, days: Math.round(daysToNew) },
         nextFull: { date: nextFull, days: Math.round(daysToFull) }
       };
@@ -1656,10 +1668,10 @@
       // v1.10.28: no "+0" / "-0"; below 0.05 °C there is no effect to show
       const diffText = Math.abs(diff) < 0.05 ? 'Som målt' : (diff > 0 ? '+' : '') + fmt(diff, 1) + '°C';
       if (currentTemp < 10) {
-        labelEl.textContent = 'Wind chill';
+        labelEl.textContent = 'Vindavkjøling';
         valueEl.textContent = diffText;
       } else if (currentTemp > 27) {
-        labelEl.textContent = 'Heat index';
+        labelEl.textContent = 'Varmeindeks';
         valueEl.textContent = diffText;
       } else {
         labelEl.textContent = 'Effekt';
@@ -1677,6 +1689,24 @@
       document.getElementById('comfortAdvice').textContent = clothing.text;
     }
 
+    async function updateMoonTimes() {
+      const riseEl = document.getElementById('moonRise');
+      const setEl = document.getElementById('moonSet');
+      try {
+        const now = new Date();
+        const offset = (now.toLocaleString('en-GB', { timeZone: 'Europe/Oslo', timeZoneName: 'longOffset' })
+          .match(/GMT([+-]\d{2}:\d{2})/) || [null, '+01:00'])[1];
+        const data = await fetchMetNo(`sunrise/3.0/moon?lat=${METNO_LAT}&lon=${METNO_LON}&date=${getDateKey(now.toISOString())}&offset=${encodeURIComponent(offset)}`);
+        const props = data && data.properties ? data.properties : {};
+        riseEl.textContent = props.moonrise && props.moonrise.time ? fmtTime(props.moonrise.time) : '–';
+        setEl.textContent = props.moonset && props.moonset.time ? fmtTime(props.moonset.time) : '–';
+      } catch (err) {
+        console.error('Feil ved henting av månetider:', err);
+        riseEl.textContent = '--';
+        setEl.textContent = '--';
+      }
+    }
+
     // v1.10.7: Update moon card
     function updateMoonCard() {
       const today = new Date();
@@ -1687,11 +1717,8 @@
       document.getElementById('moonPhase').textContent = moon.name;
       document.getElementById('moonIllum').textContent = moon.illumination + '%';
 
-      // Approximate moon rise/set (varies a lot, this is simplified)
-      const moonRiseHour = 12 + (moon.phase / 29.53 * 24);
-      const moonSetHour = moonRiseHour + 12;
-      document.getElementById('moonRise').textContent = formatHourToTime(moonRiseHour % 24);
-      document.getElementById('moonSet').textContent = formatHourToTime(moonSetHour % 24);
+      // v1.10.33: real moonrise/moonset from met.no (the old formula was "rise + 12 hours")
+      updateMoonTimes();
 
       const fullDate = nextPhases.nextFull.date;
       const newDate = nextPhases.nextNew.date;
@@ -1818,7 +1845,10 @@
           const cloudCover = currentCloudCover ?? 0;
 
           // Calculate probability
-          const prob = getAuroraProbability(kp, cloudCover, moonIllum);
+          // v1.10.33: needs darkness (sun at least 6° below the horizon)
+          const sunAlt = getSunPosition(new Date(), METNO_LAT, METNO_LON).altitude;
+          const darkNow = sunAlt < -6;
+          const prob = darkNow ? getAuroraProbability(kp, cloudCover, moonIllum) : 0;
           const probEl = document.getElementById('auroraProb');
           probEl.textContent = prob + '%';
           probEl.className = 'stat-value ' + level.class;
@@ -1844,7 +1874,7 @@
           document.getElementById('auroraMoon').textContent = moonIllum + '%';
 
           // Is it dark enough?
-          document.getElementById('auroraDark').textContent = isDarkEnough();
+          document.getElementById('auroraDark').textContent = darkNow ? 'Ja' : 'Nei';
         }
       } catch (err) {
         console.error('Feil ved henting av nordlysdata:', err);
@@ -1936,9 +1966,14 @@
 
     function fmt(val, decimals = 1) {
       if (val === null || val === undefined || val === Infinity || val === -Infinity) return '--';
-      const out = Number(val).toFixed(decimals);
-      return /^-0(\.0+)?$/.test(out) ? out.slice(1) : out; // v1.10.28: never "-0"
+      // v1.10.33: Norwegian format (decimal comma, thousands separator, real minus sign)
+      const nf = fmt.cache[decimals] || (fmt.cache[decimals] = new Intl.NumberFormat('nb-NO', {
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals
+      }));
+      const out = nf.format(Number(val));
+      return /^[-\u2212]0(,0+)?$/.test(out) ? out.slice(1) : out; // never "-0"
     }
+    fmt.cache = {};
 
     // v1.10.27: Frost depth card. Depth is the 0 °C crossing below the deepest frozen sensor,
     // interpolated between sensors (the frost_depth_cm column from HA only says -1/0).
@@ -2015,39 +2050,44 @@
     function fmtTime(isoString) {
       if (!isoString) return '--';
       const d = new Date(isoString);
-      return d.toLocaleTimeString('no-NO', { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Oslo' });
+    }
+
+    // v1.10.33: for "last 24h" fields: say so when the time is from yesterday
+    function fmtTimeRel(isoString) {
+      if (!isoString) return '--';
+      const sameDay = getDateKey(isoString) === getDateKey(new Date().toISOString());
+      return (sameDay ? '' : 'i går ') + fmtTime(isoString);
     }
 
     function fmtDateTime(isoString) {
       if (!isoString) return '--';
       const d = new Date(isoString);
-      return d.toLocaleString('no-NO', { 
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
+      return d.toLocaleString('nb-NO', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Oslo'
       });
     }
 
     function fmtShortDate(isoString) {
       if (!isoString) return '--';
       const d = new Date(isoString);
-      return d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric' });
+      return d.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', timeZone: 'Europe/Oslo' });
     }
 
     function fmtDayMonth(isoString) {
       if (!isoString) return '--';
       const d = new Date(isoString);
-      return d.toLocaleDateString('no-NO', { day: 'numeric', month: 'short' });
+      return d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short', timeZone: 'Europe/Oslo' });
     }
 
     function fmtDayName(isoString) {
       if (!isoString) return '--';
       const d = new Date(isoString);
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      if (d.toDateString() === today.toDateString()) return 'I dag';
-      if (d.toDateString() === tomorrow.toDateString()) return 'I morgen';
-      return d.toLocaleDateString('no-NO', { weekday: 'short', day: 'numeric' });
+      // v1.10.33: compare Oslo dates, not the browser's
+      const key = getDateKey(isoString);
+      if (key === getDateKey(new Date().toISOString())) return 'I dag';
+      if (key === getDateKey(new Date(Date.now() + 86400000).toISOString())) return 'I morgen';
+      return d.toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', timeZone: 'Europe/Oslo' });
     }
 
     function hoursAgo(h) {
@@ -2134,7 +2174,7 @@
       if (uv < 3) return { name: 'Lav', class: 'uv-low' };
       if (uv < 6) return { name: 'Moderat', class: 'uv-moderate' };
       if (uv < 8) return { name: 'Høy', class: 'uv-high' };
-      if (uv < 11) return { name: 'Veldig høy', class: 'uv-very-high' };
+      if (uv < 11) return { name: 'Svært høy', class: 'uv-very-high' };
       return { name: 'Ekstrem', class: 'uv-extreme' };
     }
 
@@ -2153,7 +2193,8 @@
       if (pct < 10) return { class: 'fill-low', color: '#f97316', label: 'Lav' };             // 0-10%: Orange
       if (pct < 90) return { class: 'fill-normal', color: '#4ade80', label: 'Normal' };       // 10-90%: Green
       if (pct <= 100) return { class: 'fill-high', color: '#eab308', label: 'Høy' };          // 90-100%: Yellow
-      return { class: 'fill-over', color: '#f97316', label: 'Over HRV' };                     // 100%+: Orange
+      if (pct < 110) return { class: 'fill-over', color: '#f97316', label: 'Over HRV' };      // 100-110%: Orange
+      return { class: 'fill-danger', color: '#ef4444', label: 'Langt over HRV' };             // 110%+: Red (same limit as the alert)
     }
 
     // v1.8: Get water alert level
@@ -2165,11 +2206,13 @@
     }
 
     // v1.9: Get water level trend (compare with 3 days ago)
-    function getWaterTrend(current, old) {
+    // v1.10.33: threshold is 2 % of the regulation height (was 0.1 m for every reservoir)
+    function getWaterTrend(current, old, range) {
       if (current === null || old === null) return { arrow: '', class: '' };
       const diff = current - old;
-      if (diff > 0.1) return { arrow: '↑', class: 'water-trend-up', label: 'stigende' };
-      if (diff < -0.1) return { arrow: '↓', class: 'water-trend-down', label: 'synkende' };
+      const thr = range > 0 ? range * 0.02 : 0.1;
+      if (diff > thr) return { arrow: '↑', class: 'water-trend-up', label: 'stigende' };
+      if (diff < -thr) return { arrow: '↓', class: 'water-trend-down', label: 'synkende' };
       return { arrow: '→', class: 'water-trend-stable', label: 'stabil' };
     }
 
@@ -2393,10 +2436,10 @@
             const speedKts = ac.speed_kts ?? null;
             const altFt = ac.altitude_ft ?? null;
             const parts = [];
-            if (speedKts !== null) parts.push(`${speedKts} kts (${knotsToKmh(speedKts)} km/t)`);
-            if (altFt !== null) parts.push(`${altFt} ft (${feetToMeters(altFt)} m)`);
+            if (speedKts !== null) parts.push(`${knotsToKmh(speedKts)} km/t (${speedKts} kn)`);
+            if (altFt !== null) parts.push(`${feetToMeters(altFt)} m (${altFt} ft)`);
             if (direction) parts.push(`mot ${direction}`);
-            const desc = `${parts.join(', ')} (${ac.distance_km} km)`.trim();
+            const desc = `${parts.join(', ')} (${fmt(ac.distance_km, 1)} km)`.trim();
 
             aircraftAlerts.push({
               title: `✈️ ${flight}`,
@@ -2426,10 +2469,10 @@
         for (const reservoir of reservoirs) {
           // Get latest measurement
           const data = await fetchData(
-            'water_levels', 
-            '*', 
-            `reservoir=eq.${reservoir}`, 
-            'timestamp.desc', 
+            'water_levels',
+            '*',
+            `reservoir=eq.${reservoir}`,
+            'timestamp.desc',
             '1'
           );
 
@@ -2452,7 +2495,7 @@
             const lrv = d.lrv;
             const fillPct = hrv && lrv ? ((level - lrv) / (hrv - lrv) * 100) : null;
             const fillStyle = getFillColor(fillPct);
-            const barWidth = Math.min(Math.max(fillPct || 0, 0), 120);
+            const barWidth = Math.min(Math.max(fillPct || 0, 0), 125) / 1.25; // v1.10.33: track = 0-125 %, HRV marker at 80 %
 
             // v1.10.9: Calculate energy for this reservoir
             const energy = getReservoirEnergy(reservoir, level, lrv, hrv);
@@ -2460,7 +2503,7 @@
 
             // Calculate trend
             const oldLevel = oldData.length > 0 ? oldData[0].water_level : null;
-            const trend = getWaterTrend(level, oldLevel);
+            const trend = getWaterTrend(level, oldLevel, (hrv && lrv) ? hrv - lrv : 0);
 
             if (!latestUpdate || d.timestamp > latestUpdate) {
               latestUpdate = d.timestamp;
@@ -2479,11 +2522,12 @@
 
             item.innerHTML = `
               <div class="reservoir-name">${reservoir}</div>
-              <div class="water-level">${fmt(level, 2)} m</div>
-              <div class="water-ref">LRV: ${fmt(lrv, 1)} · HRV: ${fmt(hrv, 1)}</div>
+              <div class="water-level">${fmt(level, 2)} moh.</div>
+              <div class="water-ref">LRV ${fmt(lrv, 1)} · HRV ${fmt(hrv, 1)} moh.</div>
               <div class="fill-pct ${fillStyle.class}" title="${fillStyle.label}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%<span class="sr-only"> ${fillStyle.label}</span><span class="water-trend ${trend.class}"${trend.label ? ` role="img" aria-label="${trend.label}" title="${trend.label}"` : ''}>${trend.arrow}</span></div>
               <div class="fill-bar">
                 <div class="fill-bar-inner" style="width: ${barWidth}%; background: ${fillStyle.color};"></div>
+                <div class="fill-bar-hrv" title="HRV (100 %)"></div>
               </div>
               <div class="water-energy">⚡ ${energyStr}</div>
             `;
@@ -2643,7 +2687,11 @@
           // v1.10.28: the ratio is meaningless when the estimate is ~0 (night)
           document.getElementById('solarPerformance').textContent = (d.estimated_kw ?? 0) < 0.05 ? '--' : fmt(d.performance_ratio, 0) + '%';
           document.getElementById('solarIrr').textContent = fmt(d.irradiance, 0) + ' W/m²';
-          document.getElementById('solarUpdate').textContent = fmtDateTime(d.timestamp);
+          // stale only counts while the sun is up; the inverter is silent at night
+          const solarStale = Date.now() - new Date(d.timestamp).getTime() > 15 * 60000
+            && getSunPosition(new Date(), METNO_LAT, METNO_LON).altitude > 0;
+          document.getElementById('solarUpdate').textContent = fmtDateTime(d.timestamp) + (solarStale ? ' (gamle data)' : '');
+          document.getElementById('solarInverter').classList.toggle('stale-value', solarStale);
         }
       } catch (err) {
         console.error('Feil ved henting av solcelledata:', err);
@@ -2729,7 +2777,7 @@
               <div class="day-name">${fmtDayName(day.time)}</div>
               <div class="weather-icon" role="img" aria-label="${getWeatherText(day.symbol)}" title="${getWeatherText(day.symbol)}">${getWeatherIcon(day.symbol)}</div>
               <div class="temp-range">
-                <span class="${minCls}">${fmt(minTemp, 0)}°</span> / 
+                <span class="${minCls}">${fmt(minTemp, 0)}°</span> /
                 <span class="${maxCls}">${fmt(maxTemp, 0)}°</span>
               </div>
               <div class="precip">${!day.hasPrecip ? '-' : (day.precip >= 0.05 ? fmt(day.precip, 1) + ' mm' : '0 mm')}</div>
@@ -2778,12 +2826,16 @@
           document.getElementById('irr').textContent = fmt(d.irradiance, 0);
           // v1.10.4: Lux from weather_data (approx 120 lux per W/m²)
           const hasIrr = d.irradiance !== null && d.irradiance !== undefined;
-          document.getElementById('lux').textContent = hasIrr ? fmt(d.irradiance * 120, 0) + ' lx' : '--';
+          const luxVal = (d.lux !== null && d.lux !== undefined) ? d.lux : (hasIrr ? d.irradiance * 120 : null);
+          document.getElementById('lux').textContent = luxVal !== null ? fmt(luxVal, 0) + ' lx' : '--';
           document.getElementById('rainToday').textContent = fmt(d.rain_today);
           document.getElementById('hum').textContent = fmt(d.humidity, 0);
           document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
           document.getElementById('press').textContent = fmt(d.pressure, 0);
-          document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at);
+          // v1.10.33: say so when the station has been silent for more than 15 minutes
+          const weatherStale = Date.now() - new Date(d.recorded_at).getTime() > 15 * 60000;
+          document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at) + (weatherStale ? ' – stasjonen svarer ikke' : '');
+          document.getElementById('lastUpdate').parentElement.classList.toggle('stale', weatherStale);
 
           const windSpeed = kmhToMs(d.wind_speed); // v1.10.28: null stays null ("--"), not 0
           document.getElementById('wind').textContent = fmt(windSpeed, 1);
@@ -2834,45 +2886,45 @@
           const temp24 = sumField(s24, 'temperature');
           document.getElementById('temp24min').textContent = fmt(temp24.min.val);
           document.getElementById('temp24max').textContent = fmt(temp24.max.val);
-          document.getElementById('temp24times').textContent = `(${fmtTime(temp24.min.time)} / ${fmtTime(temp24.max.time)})`;
+          document.getElementById('temp24times').textContent = `(${fmtTimeRel(temp24.min.time)} / ${fmtTimeRel(temp24.max.time)})`;
 
           const hum24 = sumField(s24, 'humidity');
           document.getElementById('hum24min').textContent = fmt(hum24.min.val, 0);
           document.getElementById('hum24max').textContent = fmt(hum24.max.val, 0);
-          document.getElementById('hum24times').textContent = `(${fmtTime(hum24.min.time)} / ${fmtTime(hum24.max.time)})`;
+          document.getElementById('hum24times').textContent = `(${fmtTimeRel(hum24.min.time)} / ${fmtTimeRel(hum24.max.time)})`;
 
           const press24 = sumField(s24, 'pressure');
           document.getElementById('press24min').textContent = fmt(press24.min.val, 0);
           document.getElementById('press24max').textContent = fmt(press24.max.val, 0);
-          document.getElementById('press24times').textContent = `(${fmtTime(press24.min.time)} / ${fmtTime(press24.max.time)})`;
+          document.getElementById('press24times').textContent = `(${fmtTimeRel(press24.min.time)} / ${fmtTimeRel(press24.max.time)})`;
 
           const wind24 = sumField(s24, 'wind_speed');
           document.getElementById('wind24max').textContent = fmt(kmhToMs(wind24.max.val), 1) + ' m/s';
-          document.getElementById('wind24time').textContent = fmtTime(wind24.max.time);
+          document.getElementById('wind24time').textContent = fmtTimeRel(wind24.max.time);
 
           const uv24 = sumField(s24, 'uv_index');
           document.getElementById('uv24max').textContent = fmt(uv24.max.val, 1);
-          document.getElementById('uv24time').textContent = fmtTime(uv24.max.time);
+          document.getElementById('uv24time').textContent = fmtTimeRel(uv24.max.time);
 
           const gust24 = sumField(s24, 'wind_gust');
           document.getElementById('gust24max').textContent = fmt(kmhToMs(gust24.max.val), 1) + ' m/s';
-          document.getElementById('gust24time').textContent = fmtTime(gust24.max.time);
+          document.getElementById('gust24time').textContent = fmtTimeRel(gust24.max.time);
 
           const clouds24 = sumField(s24, 'cloud_cover');
           document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '%';
-          document.getElementById('clouds24minTime').textContent = fmtTime(clouds24.min.time);
+          document.getElementById('clouds24minTime').textContent = fmtTimeRel(clouds24.min.time);
           document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '%';
-          document.getElementById('clouds24maxTime').textContent = fmtTime(clouds24.max.time);
+          document.getElementById('clouds24maxTime').textContent = fmtTimeRel(clouds24.max.time);
 
           const thunder24 = sumField(s24, 'thunder_probability');
           document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '%';
-          document.getElementById('thunderProb24time').textContent = fmtTime(thunder24.max.time);
+          document.getElementById('thunderProb24time').textContent = fmtTimeRel(thunder24.max.time);
 
           const irr24 = sumField(s24, 'irradiance');
           document.getElementById('irrMax').textContent = fmt(irr24.max.val, 0) + ' W/m²';
-          document.getElementById('irrMaxTime').textContent = fmtTime(irr24.max.time);
+          document.getElementById('irrMaxTime').textContent = fmtTimeRel(irr24.max.time);
 
-          document.getElementById('sun24').textContent = fmt(s24.sun_minutes / 60) + 't';
+          document.getElementById('sun24').textContent = fmt(s24.sun_minutes / 60) + ' t';
 
           const daily24 = sumDaily(s24, 'rain_today');
           const rain24total = Object.values(daily24).reduce((sum, d) => sum + d.val, 0);
@@ -2887,11 +2939,11 @@
           const diff = last - first;
           const trendEl = document.getElementById('pressTrend');
           if (diff > 1) {
-            trendEl.innerHTML = `<span class="trend-up">↑ +${fmt(diff, 1)}</span>`;
+            trendEl.innerHTML = `<span class="trend-up">↑ +${fmt(diff, 1)} hPa</span>`;
           } else if (diff < -1) {
-            trendEl.innerHTML = `<span class="trend-down">↓ ${fmt(diff, 1)}</span>`;
+            trendEl.innerHTML = `<span class="trend-down">↓ ${fmt(diff, 1)} hPa</span>`;
           } else {
-            trendEl.textContent = `→ ${fmt(diff, 1)}`;
+            trendEl.textContent = `→ ${fmt(diff, 1)} hPa`;
           }
         }
 
@@ -2927,15 +2979,15 @@
           for (const v of siljanRain7vals) {
             if (v.val > siljanRain7max.val) siljanRain7max = v;  // v1.10.28: same rule as the rain stats card
           }
-          document.getElementById('siljanRain7max').textContent = siljanRain7vals.length > 0 
-            ? fmt(siljanRain7max.val) + ' mm' 
+          document.getElementById('siljanRain7max').textContent = siljanRain7vals.length > 0
+            ? fmt(siljanRain7max.val) + ' mm'
             : '-- mm';
-          document.getElementById('siljanRain7date').textContent = siljanRain7max.time 
-            ? fmtDayMonth(siljanRain7max.time) 
+          document.getElementById('siljanRain7date').textContent = siljanRain7max.time
+            ? fmtDayMonth(siljanRain7max.time)
             : (siljanRain7vals.length > 0 ? 'ingen nedbør' : '--');
 
           document.getElementById('hum7avg').textContent = fmt(sumField(s7, 'humidity').avg, 0) + '%';
-          document.getElementById('press7avg').textContent = fmt(sumField(s7, 'pressure').avg, 0);
+          document.getElementById('press7avg').textContent = fmt(sumField(s7, 'pressure').avg, 0) + ' hPa';
 
           const wind7 = sumField(s7, 'wind_speed');
           document.getElementById('wind7max').textContent = fmt(kmhToMs(wind7.max.val), 1) + ' m/s';
@@ -2958,26 +3010,26 @@
           const temp30 = sumField(s30, 'temperature');
           document.getElementById('temp30min').textContent = fmt(temp30.min.val);
           document.getElementById('temp30max').textContent = fmt(temp30.max.val);
-          document.getElementById('temp30times').textContent = `(${fmtShortDate(temp30.min.time)} / ${fmtShortDate(temp30.max.time)})`;
+          document.getElementById('temp30times').textContent = `(${fmtDayMonth(temp30.min.time)} / ${fmtDayMonth(temp30.max.time)})`;
 
           const uv30 = sumField(s30, 'uv_index');
           document.getElementById('uv30max').textContent = fmt(uv30.max.val, 1);
-          document.getElementById('uv30date').textContent = fmtShortDate(uv30.max.time);
+          document.getElementById('uv30date').textContent = fmtDayMonth(uv30.max.time);
 
           const siljanTempMin30 = sumField(s30, 'temp_min_daily');
           const siljanTempMax30 = sumField(s30, 'temp_max_daily');
           document.getElementById('siljanTempMin30').innerHTML = fmtTempColored(siljanTempMin30.min.val);
-          document.getElementById('siljanTempMin30date').textContent = fmtShortDate(siljanTempMin30.min.time);
+          document.getElementById('siljanTempMin30date').textContent = fmtDayMonth(siljanTempMin30.min.time);
           document.getElementById('siljanTempMax30').innerHTML = fmtTempColored(siljanTempMax30.max.val);
-          document.getElementById('siljanTempMax30date').textContent = fmtShortDate(siljanTempMax30.max.time);
+          document.getElementById('siljanTempMax30date').textContent = fmtDayMonth(siljanTempMax30.max.time);
 
           const siljanWind30 = sumField(s30, 'wind_max_daily');
           document.getElementById('siljanWind30max').textContent = fmt(kmhToMs(siljanWind30.max.val), 1) + ' m/s';
-          document.getElementById('siljanWind30date').textContent = fmtShortDate(siljanWind30.max.time);
+          document.getElementById('siljanWind30date').textContent = fmtDayMonth(siljanWind30.max.time);
 
           const siljanWindAvg = sumField(s30, 'wind_max_daily').avg;
-          document.getElementById('siljanWindAvg').textContent = siljanWindAvg !== null 
-            ? fmt(kmhToMs(siljanWindAvg), 1) + ' m/s' 
+          document.getElementById('siljanWindAvg').textContent = siljanWindAvg !== null
+            ? fmt(kmhToMs(siljanWindAvg), 1) + ' m/s'
             : '-- m/s';
 
           const siljanRain30daily = sumDaily(s30, 'rain_max_daily');
@@ -2988,19 +3040,19 @@
             if (v.val > siljanRain30max.val) siljanRain30max = v;  // v1.10.28: same rule as the rain stats card
             siljanRain30total += v.val;
           }
-          document.getElementById('siljanRain30max').textContent = siljanRain30vals.length > 0 
-            ? fmt(siljanRain30max.val) + ' mm' 
+          document.getElementById('siljanRain30max').textContent = siljanRain30vals.length > 0
+            ? fmt(siljanRain30max.val) + ' mm'
             : '-- mm';
-          document.getElementById('siljanRain30date').textContent = siljanRain30max.time 
-            ? fmtDayMonth(siljanRain30max.time) 
+          document.getElementById('siljanRain30date').textContent = siljanRain30max.time
+            ? fmtDayMonth(siljanRain30max.time)
             : (siljanRain30vals.length > 0 ? 'ingen nedbør' : '--');
-          document.getElementById('siljanRainAvg').textContent = siljanRain30vals.length > 0 
-            ? fmt(siljanRain30total / siljanRain30vals.length) + ' mm' 
+          document.getElementById('siljanRainAvg').textContent = siljanRain30vals.length > 0
+            ? fmt(siljanRain30total / siljanRain30vals.length) + ' mm'
             : '-- mm';
 
           const wind30 = sumField(s30, 'wind_speed');
           document.getElementById('wind30max').textContent = fmt(kmhToMs(wind30.max.val), 1) + ' m/s';
-          document.getElementById('wind30time').textContent = fmtShortDate(wind30.max.time);
+          document.getElementById('wind30time').textContent = fmtDayMonth(wind30.max.time);
 
           const daily30 = sumDaily(s30, 'rain_today');
           const rain30total = Object.values(daily30).reduce((sum, d) => sum + d.val, 0);
@@ -3087,7 +3139,7 @@
         }
 
         // Update date display
-        document.getElementById('podcastDate').textContent = new Date().toLocaleDateString('nb-NO', { 
+        document.getElementById('podcastDate').textContent = new Date().toLocaleDateString('nb-NO', {
           day: 'numeric', month: 'short'
         });
 
@@ -3187,6 +3239,7 @@
     setInterval(updateSolarData, 60000);       // Solar data every minute
     setInterval(updateDaylightCard, 3600000);  // Daylight data every hour
     setInterval(updateAuroraCard, 900000);     // Aurora data every 15 minutes
+    setInterval(updateMoonCard, 3600000);      // Moon card every hour (v1.10.33)
     setInterval(updateSunPosition, 60000);     // Sun position every minute
     setInterval(updateAircraftAlerts, 60000);  // Aircraft alerts every minute
     setInterval(updateFrostCard, 300000);      // Frost depth every 5 minutes (HA pushes every 15)
