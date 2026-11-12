@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.29 -->
+<!-- Værdata Siljan v1.10.30 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -388,7 +388,7 @@
   </div>
 
   <div class="section-title" id="sec-na"><span>Været nå</span> <span class="section-src">egen stasjon</span></div>
-  <div class="grid">
+  <div class="grid" id="gridNow">
     <!-- Temperatur -->
     <div class="card hero">
       <h2>🌡️ Temperatur</h2>
@@ -614,7 +614,7 @@
   </div>
 
   <div class="section-title" id="sec-malinger"><span>Flere målinger</span> <span class="section-src">egen stasjon</span></div>
-  <div class="grid">
+  <div class="grid" id="gridMore">
     <!-- Irradiance -->
     <div class="card">
       <h2>☀️ Solinnstråling</h2>
@@ -671,7 +671,7 @@
     </div>
 
     <!-- Tele & jordtemperatur (v1.10.27) -->
-    <div class="card frost">
+    <div class="card frost" id="frostCard">
       <h2><span aria-hidden="true">🧊</span> Tele &amp; jordtemperatur</h2>
       <span class="value" id="frostDepth">--</span><span class="unit" id="frostDepthUnit"></span>
       <div class="stats-4">
@@ -1079,6 +1079,8 @@
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
     //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
+    //   v1.10.30 - Frost depth card shown under "Været nå" in the winter half (Oct-Apr) or
+    //              whenever there is frost in the ground; otherwise under "Flere målinger"
     //   v1.10.29 - Layout after design review (agent 1): "Været nå" first (temp, feels like, wind,
     //              rain, humidity, pressure), forecast right below, wind card includes gust and
     //              direction, own sections for sun/moon/aurora and statistics (foldable), hazard
@@ -1845,6 +1847,14 @@
       const a = pts[deepest], b = pts[deepest + 1];
       return { depth: a.depth + (b.depth - a.depth) * (0 - a.t) / (b.t - a.t), frozen: true };
     }
+    // v1.10.30: the card lives in "Været nå" Oct-Apr (Oslo time) or when the ground is frozen
+    function placeFrostCard(frozen) {
+      const month = Number(new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Oslo', month: 'numeric' }));
+      const winter = month >= 10 || month <= 4;
+      const target = document.getElementById((winter || frozen) ? 'gridNow' : 'gridMore');
+      const card = document.getElementById('frostCard');
+      if (card.parentElement !== target) target.appendChild(card);
+    }
     async function updateFrostCard() {
       const depthEl = document.getElementById('frostDepth');
       const unitEl = document.getElementById('frostDepthUnit');
@@ -1862,6 +1872,7 @@
         });
 
         const frost = calcFrostDepth(row);
+        placeFrostCard(!!(frost && frost.frozen));
         depthEl.className = 'value';
         if (!frost) {
           depthEl.textContent = '--';
@@ -3020,6 +3031,8 @@
         if (target && target.tagName === 'DETAILS') target.open = true;
       });
     });
+
+    placeFrostCard(false);
 
     // Initial load
     updateDashboard();
