@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.26 -->
+<!-- Værdata Siljan v1.10.27 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -144,6 +144,9 @@
     .card.moon { border-left: 3px solid #a78bfa; }
     .card.records { border-left: 3px solid #f43f5e; }
     .card.aurora { border-left: 3px solid #22d3ee; }
+    .card.frost { border-left: 3px solid #60a5fa; }
+    .frost-none { color: #4ade80; }
+    .frost-note { font-size: 0.75rem; color: #a3a3b5; margin-top: 8px; }
     .sun-times { font-size: 0.9rem; color: #fbbf24; margin-top: 5px; }
     .aurora-low { color: #4ade80; }
     .aurora-moderate { color: #fbbf24; }
@@ -680,6 +683,23 @@
         </div>
       </div>
     </div>
+
+    <!-- Tele & jordtemperatur (v1.10.27) -->
+    <div class="card frost">
+      <h2><span aria-hidden="true">🧊</span> Tele &amp; jordtemperatur</h2>
+      <span class="value" id="frostDepth">--</span><span class="unit" id="frostDepthUnit"></span>
+      <div class="stats-4">
+        <div class="stat"><div class="stat-label">Overflate</div><div class="stat-value" id="soil0">--</div></div>
+        <div class="stat"><div class="stat-label">5 cm</div><div class="stat-value" id="soil5">--</div></div>
+        <div class="stat"><div class="stat-label">10 cm</div><div class="stat-value" id="soil10">--</div></div>
+        <div class="stat"><div class="stat-label">20 cm</div><div class="stat-value" id="soil20">--</div></div>
+        <div class="stat"><div class="stat-label">30 cm</div><div class="stat-value" id="soil30">--</div></div>
+        <div class="stat"><div class="stat-label">50 cm</div><div class="stat-value" id="soil50">--</div></div>
+        <div class="stat"><div class="stat-label">75 cm</div><div class="stat-value" id="soil75">--</div></div>
+        <div class="stat"><div class="stat-label">100 cm</div><div class="stat-value" id="soil100">--</div></div>
+      </div>
+      <div class="frost-note" id="frostNote">--</div>
+    </div>
   </div>
 
   <div class="section-title">🌐 Met.no Prognose</div>
@@ -1016,6 +1036,7 @@
     //   v1.10.25 - Fixed police case grouping for new politiloggen.politiet.no event_id format (hyphen, not slash)
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
+    //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1739,6 +1760,69 @@
     function fmt(val, decimals = 1) {
       if (val === null || val === undefined || val === Infinity || val === -Infinity) return '--';
       return Number(val).toFixed(decimals);
+    }
+
+    // v1.10.27: Frost depth card. Depth is the 0 °C crossing below the deepest frozen sensor,
+    // interpolated between sensors (the frost_depth_cm column from HA only says -1/0).
+    const FROST_SENSORS = [
+      ['surface', 0], ['d5cm', 5], ['d10cm', 10], ['d20cm', 20],
+      ['d30cm', 30], ['d50cm', 50], ['d75cm', 75], ['d100cm', 100]
+    ];
+    function calcFrostDepth(row) {
+      const pts = FROST_SENSORS
+        .map(([col, depth]) => ({ depth, t: row[col] }))
+        .filter(p => p.t !== null && p.t !== undefined);
+      if (pts.length === 0) return null;            // no data
+      let deepest = -1;
+      pts.forEach((p, i) => { if (p.t < 0) deepest = i; });
+      if (deepest === -1) return { depth: 0, frozen: false };
+      if (deepest === pts.length - 1) return { depth: pts[deepest].depth, frozen: true, beyond: true };
+      const a = pts[deepest], b = pts[deepest + 1];
+      return { depth: a.depth + (b.depth - a.depth) * (0 - a.t) / (b.t - a.t), frozen: true };
+    }
+    async function updateFrostCard() {
+      const depthEl = document.getElementById('frostDepth');
+      const unitEl = document.getElementById('frostDepthUnit');
+      const noteEl = document.getElementById('frostNote');
+      try {
+        const rows = await fetchData('frost_depth', '*', '', 'timestamp.desc', '1');
+        if (!Array.isArray(rows) || rows.length === 0) throw new Error('no frost_depth rows');
+        const row = rows[0];
+
+        FROST_SENSORS.forEach(([col, depth]) => {
+          const el = document.getElementById('soil' + depth);
+          const t = row[col];
+          el.textContent = (t === null || t === undefined) ? '--' : fmt(t) + '°';
+          el.className = 'stat-value' + (t !== null && t !== undefined && t < 0 ? ' temp-cold' : '');
+        });
+
+        const frost = calcFrostDepth(row);
+        depthEl.className = 'value';
+        if (!frost) {
+          depthEl.textContent = '--';
+          unitEl.textContent = '';
+        } else if (!frost.frozen) {
+          depthEl.textContent = 'Ingen tele';
+          depthEl.classList.add('frost-none');
+          unitEl.textContent = '';
+        } else {
+          const cm = Math.max(1, Math.round(frost.depth));
+          depthEl.textContent = (frost.beyond ? '> ' : '') + cm;
+          depthEl.classList.add('temp-cold');
+          unitEl.textContent = ' cm tele';
+        }
+
+        const ageMin = (Date.now() - new Date(row.timestamp).getTime()) / 60000;
+        noteEl.textContent = ageMin > 120
+          ? `⚠ Gamle data – sist målt ${fmtDateTime(row.timestamp)}`
+          : `Jordtemperatur målt ${fmtTime(row.timestamp)}`;
+      } catch (e) {
+        console.error('Frost depth error:', e);
+        depthEl.textContent = '--';
+        depthEl.className = 'value';
+        unitEl.textContent = '';
+        noteEl.textContent = 'Ingen data';
+      }
     }
 
     function fmtTime(isoString) {
@@ -2831,6 +2915,7 @@
     updateAuroraCard();
     updateSunPosition();
     updateAircraftAlerts();
+    updateFrostCard();
     loadPodcast();
     
     // Refresh intervals
@@ -2843,6 +2928,7 @@
     setInterval(updateAuroraCard, 900000);     // Aurora data every 15 minutes
     setInterval(updateSunPosition, 60000);     // Sun position every minute
     setInterval(updateAircraftAlerts, 60000);  // Aircraft alerts every minute
+    setInterval(updateFrostCard, 300000);      // Frost depth every 5 minutes (HA pushes every 15)
   </script>
 </body>
 </html>
