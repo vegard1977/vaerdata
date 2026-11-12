@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.27 -->
+<!-- Værdata Siljan v1.10.28 -->
 <!DOCTYPE html>
 <html lang="no">
 <head>
@@ -632,7 +632,7 @@
         <div class="stat">
           <div class="stat-label">Lengste tørrperiode</div>
           <div class="stat-value" id="dryStreak">--</div>
-          <div class="stat-detail">(siste 30d)</div>
+          <div class="stat-detail" id="dryStreakDetail">(siste 30d)</div>
         </div>
         <div class="stat">
           <div class="stat-label">Snitt per regndag</div>
@@ -921,7 +921,7 @@
       <div class="updated" style="margin-top: 15px; margin-bottom: 0;">
         Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" style="color: #888;">Skagerak Kraft</a> og egne beregninger · 
         Fyllingsgrad: LRV = 0%, HRV = 100% · 
-        Oppdatert: <span id="waterUpdate">--</span>
+        Oppdatert: <span id="waterUpdate">--</span> · Energi (GWh) er et overslag
       </div>
     </div>
   </div>
@@ -1037,6 +1037,10 @@
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
     //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
+    //   v1.10.28 - Bug fixes: reservoir energy was 1000x too high, aurora Kp (new NOAA format),
+    //              forecast precip from day 3 (next_6_hours), unknown values no longer shown as 0,
+    //              rain stats (days without data, daily rain fixed in weather_summary RPC),
+    //              comfort scale above 25 °C, negative zero, Oslo date for daylight lookup
 
     // v1.10: Temperature color (blue = frost, red = above zero)
     function getTempClass(temp) {
@@ -1207,7 +1211,7 @@
     // v1.10.17: Fetch daylight from Supabase (synced with HA sun.sun)
     async function fetchDaylightFromSupabase() {
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getDateKey(new Date().toISOString()); // v1.10.28: Oslo date, not UTC date
         const response = await fetch(
           `${SUPABASE_URL}/rest/v1/daylight_data?date=eq.${today}&limit=1`,
           { headers: { 'apikey': SUPABASE_KEY } }
@@ -1382,8 +1386,9 @@
       let score = 100;
       
       // Temperature-based score (Nordic adjusted)
-      if (tempC > 30) score = 30 - (tempC - 30) * 2;
-      else if (tempC > 25) score = 50 - (tempC - 25) * 4;
+      // v1.10.28: continuous above 25 °C (was 100 at 25.0 and 50 at 25.1)
+      if (tempC > 30) score = 60 - (tempC - 30) * 4;
+      else if (tempC > 25) score = 100 - (tempC - 25) * 8; // 100-60
       else if (tempC >= 15) score = 90 + (tempC - 20) * 2; // 80-100
       else if (tempC >= 5) score = 75 + (tempC - 5) * 1.5; // 75-90
       else if (tempC >= -5) score = 55 + (tempC + 5) * 2; // 55-75
@@ -1405,7 +1410,14 @@
     }
 
     // v1.10.9: Norwegian comfort descriptions
-    function getComfortInfo(score) {
+    function getComfortInfo(score, tempC) {
+      // v1.10.28: a low score on a hot day is heat, not cold
+      if (tempC !== null && tempC !== undefined && tempC > 25) {
+        if (score >= 80) return { desc: 'Varmt', class: 'comfort-good' };
+        if (score >= 60) return { desc: 'Veldig varmt', class: 'comfort-ok' };
+        if (score >= 40) return { desc: 'Svært varmt', class: 'comfort-bad' };
+        return { desc: 'Ekstremt varmt', class: 'comfort-bad' };
+      }
       if (score >= 80) return { desc: 'Behagelig', class: 'comfort-good', icon: '😊', advice: 'Nyt været!' };
       if (score >= 70) return { desc: 'Fint', class: 'comfort-good', icon: '🙂', advice: 'Fint ute' };
       if (score >= 55) return { desc: 'Kjølig', class: 'comfort-ok', icon: '😐', advice: 'Lett jakke' };
@@ -1420,6 +1432,7 @@
       if (tempC < -15) return { icon: '🧥🧤🧣', text: 'Kle deg godt' };
       if (tempC < -5) return { icon: '🧤🧣', text: 'Kle deg' };
       if (tempC < 5) return { icon: '🧥🧣', text: 'Jakke og lue' };
+      if (rain > 0 && tempC >= 5 && tempC <= 25) return { icon: '🧥☔', text: 'Regntøy' }; // v1.10.28
       if (tempC < 15) return { icon: '🧥', text: 'Lett jakke' };
       if (tempC > 30) return { icon: '🥵💧', text: 'Hold deg i skyggen' };
       if (tempC > 25) return { icon: '🕶️💧', text: 'Drikk vann' };
@@ -1471,13 +1484,13 @@
     }
 
     // v1.10.7: Update feels like card
-    let currentTemp = null, currentWind = null, currentHumidity = null;
+    let currentTemp = null, currentWind = null, currentHumidity = null, currentRain1h = null;
     let currentCloudCover = null; // v1.10.26: shared with aurora card
     let lastLongStatsUpdate = 0;  // v1.10.26: throttles 7d/30d summary to every 15 min
     function updateFeelsLikeCard() {
       if (currentTemp === null) return;
       
-      const windKmh = currentWind * 3.6; // m/s to km/h
+      const windKmh = (currentWind ?? 0) * 3.6; // m/s to km/h
       const windChill = calculateWindChill(currentTemp, windKmh);
       const heatIndex = calculateHeatIndex(currentTemp, currentHumidity);
       
@@ -1485,12 +1498,12 @@
       const diff = feelsLike - currentTemp;
       
       const feelsLikeEl = document.getElementById('feelsLike');
-      feelsLikeEl.textContent = fmt(feelsLike, 0);
+      feelsLikeEl.textContent = fmt(feelsLike, 1); // v1.10.28: one decimal, same as measured temp
       feelsLikeEl.className = 'value ' + getTempClass(feelsLike);
       
       const comfortScore = calculateComfortIndex(currentTemp, currentHumidity, currentWind);
-      const comfortInfo = getComfortInfo(comfortScore);
-      const clothing = getClothingAdvice(currentTemp, currentWind, 0);
+      const comfortInfo = getComfortInfo(comfortScore, currentTemp);
+      const clothing = getClothingAdvice(currentTemp, currentWind, currentRain1h ?? 0);
       
       const comfortLevelEl = document.getElementById('comfortLevel');
       comfortLevelEl.textContent = comfortInfo.desc;
@@ -1500,15 +1513,17 @@
       
       const labelEl = document.getElementById('chillHeatLabel');
       const valueEl = document.getElementById('chillHeatValue');
+      // v1.10.28: no "+0" / "-0"; below 0.05 °C there is no effect to show
+      const diffText = Math.abs(diff) < 0.05 ? 'Som målt' : (diff > 0 ? '+' : '') + fmt(diff, 1) + '°C';
       if (currentTemp < 10) {
         labelEl.textContent = 'Wind chill';
-        valueEl.textContent = (diff < 0 ? '' : '+') + fmt(diff, 0) + '°C';
+        valueEl.textContent = diffText;
       } else if (currentTemp > 27) {
         labelEl.textContent = 'Heat index';
-        valueEl.textContent = (diff > 0 ? '+' : '') + fmt(diff, 0) + '°C';
+        valueEl.textContent = diffText;
       } else {
         labelEl.textContent = 'Effekt';
-        valueEl.textContent = '0°C';
+        valueEl.textContent = 'Som målt';
       }
       
       document.getElementById('comfortWind').textContent = fmt(currentWind, 1) + ' m/s';
@@ -1578,11 +1593,11 @@
         document.getElementById('frostDays').textContent = frostDays;
         
         const coldEl = document.getElementById('coldDegrees');
-        coldEl.textContent = '-' + fmt(coldDegrees, 0) + '°';
+        coldEl.textContent = (Math.round(coldDegrees) > 0 ? '-' : '') + fmt(coldDegrees, 0) + '°';
         coldEl.className = 'stat-value temp-cold';
         
         const warmEl = document.getElementById('warmDegrees');
-        warmEl.textContent = '+' + fmt(warmDegrees, 0) + '°';
+        warmEl.textContent = (Math.round(warmDegrees) > 0 ? '+' : '') + fmt(warmDegrees, 0) + '°';
         warmEl.className = 'stat-value temp-warm';
       }
     }
@@ -1638,14 +1653,18 @@
         const response = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
         const data = await response.json();
         
-        if (data && data.length > 1) {
-          // Skip header row, get latest readings
-          const readings = data.slice(1);
-          const latest = readings[readings.length - 1];
-          const kp = parseFloat(latest[1]) || 0;
-          
+        // v1.10.28: NOAA now returns objects ({time_tag, Kp, ...}); the older format was rows
+        // with a header row. Read both, drop invalid values, never turn a missing value into 0.
+        const readings = (Array.isArray(data) ? data : [])
+          .map(r => Array.isArray(r) ? { t: r[0], kp: parseFloat(r[1]) } : { t: r.time_tag, kp: Number(r.Kp ?? r.kp_index) })
+          .filter(r => r.t && Number.isFinite(r.kp));
+        if (readings.length === 0) throw new Error('No valid Kp readings from NOAA');
+
+        {
+          const kp = readings[readings.length - 1].kp;
+
           // Display current Kp
-          document.getElementById('kpIndex').textContent = 'Kp ' + kp.toFixed(1);
+          document.getElementById('kpIndex').textContent = 'Kp ' + fmt(kp, 1);
           
           const level = getAuroraLevel(kp);
           const levelEl = document.getElementById('auroraLevel');
@@ -1658,8 +1677,10 @@
           
           // v1.10.26: Cloud cover from latest weather row (DOM could still show '--' on first load → 0%)
           if (currentCloudCover === null) {
-            const latestCloud = await fetchData('weather_data', 'cloud_cover', 'cloud_cover=not.is.null', 'recorded_at.desc', '1');
-            if (latestCloud.length > 0) currentCloudCover = latestCloud[0].cloud_cover;
+            try {
+              const latestCloud = await fetchData('weather_data', 'cloud_cover', 'cloud_cover=not.is.null', 'recorded_at.desc', '1');
+              if (latestCloud.length > 0) currentCloudCover = latestCloud[0].cloud_cover;
+            } catch (e) { /* cloud cover unknown: Kp is still shown */ }
           }
           const cloudCover = currentCloudCover ?? 0;
           
@@ -1674,20 +1695,19 @@
           let maxKp = 0;
           let maxTime = '';
           for (const r of last24h) {
-            const kpVal = parseFloat(r[1]) || 0;
-            if (kpVal > maxKp) {
-              maxKp = kpVal;
-              maxTime = r[0]; // timestamp
+            if (r.kp >= maxKp) {
+              maxKp = r.kp;
+              maxTime = r.t; // timestamp (UTC)
             }
           }
-          document.getElementById('kpMax24').textContent = 'Kp ' + maxKp.toFixed(1);
+          document.getElementById('kpMax24').textContent = 'Kp ' + fmt(maxKp, 1);
           if (maxTime) {
-            const maxDate = new Date(maxTime.replace(' ', 'T') + 'Z');
+            const maxDate = new Date(String(maxTime).replace(' ', 'T').replace(/Z$/, '') + 'Z');
             document.getElementById('kpMax24time').textContent = fmtTime(maxDate.toISOString());
           }
-          
+
           // Cloud cover and moon
-          document.getElementById('auroraClouds').textContent = cloudCover + '%';
+          document.getElementById('auroraClouds').textContent = currentCloudCover === null ? '--' : cloudCover + '%';
           document.getElementById('auroraMoon').textContent = moonIllum + '%';
           
           // Is it dark enough?
@@ -1697,6 +1717,9 @@
         console.error('Feil ved henting av nordlysdata:', err);
         document.getElementById('kpIndex').textContent = '--';
         document.getElementById('auroraLevel').textContent = 'Utilgjengelig';
+        document.getElementById('auroraLevel').className = 'beaufort';
+        document.getElementById('auroraProb').textContent = '--';
+        document.getElementById('kpMax24').textContent = '--';
       }
     }
     
@@ -1747,6 +1770,7 @@
           'Authorization': `Bearer ${SUPABASE_KEY}`
         }
       });
+      if (!res.ok) throw new Error(table + ' HTTP ' + res.status); // v1.10.28
       return res.json();
     }
 
@@ -1759,7 +1783,8 @@
 
     function fmt(val, decimals = 1) {
       if (val === null || val === undefined || val === Infinity || val === -Infinity) return '--';
-      return Number(val).toFixed(decimals);
+      const out = Number(val).toFixed(decimals);
+      return /^-0(\.0+)?$/.test(out) ? out.slice(1) : out; // v1.10.28: never "-0"
     }
 
     // v1.10.27: Frost depth card. Depth is the 0 °C crossing below the deepest frozen sensor,
@@ -1988,7 +2013,7 @@
 
     // v1.10.9: Calculate stored hydropower energy
     // v1.10.9: Calculate stored energy for a single reservoir
-    function getReservoirEnergy(reservoir, level, lrv) {
+    function getReservoirEnergy(reservoir, level, lrv, hrv) {
       // Reservoir data: area (km²), fallhøyde (m)
       const reservoirConfig = {
         'Ramsvatn':   { area: 1.655, fall: 80.6 },
@@ -2005,9 +2030,11 @@
       const rho = 1000;      // kg/m³ (vann)
       const g = 9.81;        // m/s²
       const eta = 0.88;      // virkningsgrad
-      const toGWh = 3.6e9;   // J to GWh conversion
+      const toGWh = 3.6e12;  // J per GWh (v1.10.28: was 3.6e9 = J per MWh, 1000x too high)
       
-      const availableHeight = Math.max(0, level - lrv);
+      // v1.10.28: water above HRV spills, so it adds no stored energy
+      const usableLevel = (hrv !== null && hrv !== undefined) ? Math.min(level, hrv) : level;
+      const availableHeight = Math.max(0, usableLevel - lrv);
       const volume = config.area * 1e6 * availableHeight; // m³
       const energy = (rho * g * volume * config.fall * eta) / toGWh; // GWh
       
@@ -2056,11 +2083,17 @@
         }
       }
 
-      // Calculate dry streak using all days
+      // Calculate dry streak. v1.10.28: a day without data is not a dry day; it breaks the streak.
       let maxDryStreak = 0;
       let currentDryStreak = 0;
+      let missingDays = 0;
       for (const day of allDays) {
-        const rain = dailyMax[day] ? dailyMax[day].val : 0;
+        if (!dailyMax[day]) {
+          missingDays++;
+          currentDryStreak = 0;
+          continue;
+        }
+        const rain = dailyMax[day].val;
         if (rain <= threshold) {
           currentDryStreak++;
           maxDryStreak = Math.max(maxDryStreak, currentDryStreak);
@@ -2071,7 +2104,7 @@
 
       const avgPerRainDay = rainDays > 0 ? totalRain / rainDays : 0;
 
-      return { rainDays, maxDay, maxDryStreak, avgPerRainDay };
+      return { rainDays, maxDay, maxDryStreak, avgPerRainDay, missingDays };
     }
 
     function calcDailyMax(data, field) {
@@ -2177,11 +2210,14 @@
           for (const ac of uniqueAircraft) {
             const direction = headingToDirection(ac.track);
             const flight = ac.flight?.trim() || ac.hex;
-            const speedKts = ac.speed_kts || 0;
-            const altFt = ac.altitude_ft || 0;
-            const speedKmh = knotsToKmh(speedKts);
-            const altM = feetToMeters(altFt);
-            const desc = `${speedKts} kts (${speedKmh} km/t), ${altFt} ft (${altM} m)${direction ? `, mot ${direction}` : ''} (${ac.distance_km} km)`;
+            // v1.10.28: leave out speed/altitude when unknown instead of showing 0
+            const speedKts = ac.speed_kts ?? null;
+            const altFt = ac.altitude_ft ?? null;
+            const parts = [];
+            if (speedKts !== null) parts.push(`${speedKts} kts (${knotsToKmh(speedKts)} km/t)`);
+            if (altFt !== null) parts.push(`${altFt} ft (${feetToMeters(altFt)} m)`);
+            if (direction) parts.push(`mot ${direction}`);
+            const desc = `${parts.join(', ')} (${ac.distance_km} km)`.trim();
             
             aircraftAlerts.push({
               title: `✈️ ${flight}`,
@@ -2240,8 +2276,8 @@
             const barWidth = Math.min(Math.max(fillPct || 0, 0), 120);
             
             // v1.10.9: Calculate energy for this reservoir
-            const energy = getReservoirEnergy(reservoir, level, lrv);
-            const energyStr = energy !== null ? fmt(energy, 2) + ' GWh' : '--';
+            const energy = getReservoirEnergy(reservoir, level, lrv, hrv);
+            const energyStr = energy !== null ? fmt(energy, 1) + ' GWh' : '--';
             
             // Calculate trend
             const oldLevel = oldData.length > 0 ? oldData[0].water_level : null;
@@ -2401,6 +2437,9 @@
         
       } catch (err) {
         console.error('Feil ved henting av politilogg:', err);
+        // v1.10.28: do not leave "Laster..." standing forever
+        const loading = document.querySelector('#policeList .police-desc');
+        if (loading && loading.textContent === 'Laster...') loading.textContent = 'Kunne ikke hente politiloggen';
       }
     }
 
@@ -2422,7 +2461,8 @@
           // lux now comes from weather_data (v1.10.4)
           document.getElementById('solarInverter').textContent = fmt(d.inverter_kw, 2);
           document.getElementById('solarEstimated').textContent = fmt(d.estimated_kw, 2) + ' kW';
-          document.getElementById('solarPerformance').textContent = fmt(d.performance_ratio, 0) + '%';
+          // v1.10.28: the ratio is meaningless when the estimate is ~0 (night)
+          document.getElementById('solarPerformance').textContent = (d.estimated_kw ?? 0) < 0.05 ? '--' : fmt(d.performance_ratio, 0) + '%';
           document.getElementById('solarIrr').textContent = fmt(d.irradiance, 0) + ' W/m²';
           document.getElementById('solarUpdate').textContent = fmtDateTime(d.timestamp);
         }
@@ -2450,19 +2490,21 @@
           
           document.getElementById('fog').textContent = fmt(instant.fog_area_fraction, 0) + '%';
           
-          const precipNext = now.data.next_1_hours?.details?.precipitation_amount || 0;
+          const precipNext = now.data.next_1_hours?.details?.precipitation_amount ?? null;
           document.getElementById('precipNextHour').textContent = fmt(precipNext, 1) + ' mm';
           
           const dailyForecasts = {};
           for (const ts of forecast.properties.timeseries) {
             const date = getDateKey(ts.time);
-            const hour = new Date(ts.time).getHours();
-            
+            // v1.10.28: hour in Oslo time (was the time zone of the browser)
+            const hour = Number(new Date(ts.time).toLocaleString('sv-SE', { timeZone: 'Europe/Oslo', hour: '2-digit' }));
+
             if (!dailyForecasts[date]) {
-              dailyForecasts[date] = { 
-                temps: [], 
-                symbol: null, 
+              dailyForecasts[date] = {
+                temps: [],
+                symbol: null,
                 precip: 0,
+                hasPrecip: false,
                 time: ts.time
               };
             }
@@ -2477,8 +2519,17 @@
               dailyForecasts[date].symbol = ts.data.next_6_hours.summary.symbol_code;
             }
             
-            if (ts.data.next_1_hours?.details?.precipitation_amount) {
-              dailyForecasts[date].precip += ts.data.next_1_hours.details.precipitation_amount;
+            // v1.10.28: met.no only has next_1_hours for the first 2-3 days. Later time steps are
+            // 6-hourly and only carry next_6_hours, so fall back to that (no overlap: a step has
+            // either hourly or 6-hourly resolution).
+            const p1 = ts.data.next_1_hours?.details?.precipitation_amount;
+            const p6 = ts.data.next_6_hours?.details?.precipitation_amount;
+            if (p1 !== null && p1 !== undefined) {
+              dailyForecasts[date].precip += p1;
+              dailyForecasts[date].hasPrecip = true;
+            } else if (p6 !== null && p6 !== undefined && new Date(ts.time).getUTCHours() % 6 === 0) {
+              dailyForecasts[date].precip += p6;
+              dailyForecasts[date].hasPrecip = true;
             }
           }
           
@@ -2502,7 +2553,7 @@
                 <span class="${minCls}">${fmt(minTemp, 0)}°</span> / 
                 <span class="${maxCls}">${fmt(maxTemp, 0)}°</span>
               </div>
-              ${day.precip > 0.1 ? `<div class="precip">${fmt(day.precip, 1)} mm</div>` : '<div class="precip">-</div>'}
+              <div class="precip">${!day.hasPrecip ? '-' : (day.precip >= 0.05 ? fmt(day.precip, 1) + ' mm' : '0 mm')}</div>
             `;
             forecastGrid.appendChild(dayEl);
           }
@@ -2547,22 +2598,22 @@
           document.getElementById('temp').textContent = fmt(d.temperature);
           document.getElementById('irr').textContent = fmt(d.irradiance, 0);
           // v1.10.4: Lux from weather_data (approx 120 lux per W/m²)
-          const luxValue = (d.irradiance || 0) * 120;
-          document.getElementById('lux').textContent = luxValue > 0 ? fmt(luxValue, 0) + ' lx' : '0 lx';
+          const hasIrr = d.irradiance !== null && d.irradiance !== undefined;
+          document.getElementById('lux').textContent = hasIrr ? fmt(d.irradiance * 120, 0) + ' lx' : '--';
           document.getElementById('rainToday').textContent = fmt(d.rain_today);
           document.getElementById('hum').textContent = fmt(d.humidity, 0);
           document.getElementById('dew').textContent = fmt(d.dew_point) + '°C';
           document.getElementById('press').textContent = fmt(d.pressure, 0);
           document.getElementById('lastUpdate').textContent = fmtDateTime(d.recorded_at);
           
-          const windSpeed = kmhToMs(d.wind_speed) || 0;
+          const windSpeed = kmhToMs(d.wind_speed); // v1.10.28: null stays null ("--"), not 0
           document.getElementById('wind').textContent = fmt(windSpeed, 1);
           const beaufort = getBeaufort(windSpeed);
           const beaufortEl = document.getElementById('beaufort');
           beaufortEl.textContent = beaufort.name;
           beaufortEl.className = 'beaufort ' + beaufort.class;
 
-          const uvVal = d.uv_index || 0;
+          const uvVal = d.uv_index ?? null;
           document.getElementById('uv').textContent = fmt(uvVal, 1);
           const uvLevel = getUvLevel(uvVal);
           const uvLevelEl = document.getElementById('uvLevel');
@@ -2573,7 +2624,7 @@
           const windDir = getWindDirection(d.wind_direction);
           document.getElementById('windDirArrow').textContent = windDir.arrow;
           document.getElementById('windDirText').textContent = windDir.text;
-          document.getElementById('windDirDeg').textContent = d.wind_direction ? d.wind_direction + '°' : '--';
+          document.getElementById('windDirDeg').textContent = (d.wind_direction !== null && d.wind_direction !== undefined) ? d.wind_direction + '°' : '--';
           document.getElementById('clouds').textContent = fmt(d.cloud_cover, 0);
           if (d.cloud_cover !== null && d.cloud_cover !== undefined) currentCloudCover = d.cloud_cover;
           document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '%';
@@ -2583,7 +2634,7 @@
           document.getElementById('siljanTempMax').innerHTML = fmtTempColored(d.temp_max_daily);
           document.getElementById('siljanRainMax').textContent = fmt(d.rain_max_daily);
           
-          const siljanWind = kmhToMs(d.wind_max_daily) || 0;
+          const siljanWind = kmhToMs(d.wind_max_daily);
           document.getElementById('siljanWindMax').textContent = fmt(siljanWind, 1);
           const siljanBeaufort = getBeaufort(siljanWind);
           const siljanBeaufortEl = document.getElementById('siljanWindBeaufort');
@@ -2594,6 +2645,7 @@
           currentTemp = d.temperature;
           currentWind = windSpeed;
           currentHumidity = d.humidity;
+          currentRain1h = d.rain_1h ?? null;
           updateFeelsLikeCard();
         }
 
@@ -2694,7 +2746,7 @@
           const siljanRain7vals = Object.values(siljanRain7daily);
           let siljanRain7max = { val: 0, time: null };
           for (const v of siljanRain7vals) {
-            if (v.val >= siljanRain7max.val) siljanRain7max = v;  // >= to capture date even when 0
+            if (v.val > siljanRain7max.val) siljanRain7max = v;  // v1.10.28: same rule as the rain stats card
           }
           document.getElementById('siljanRain7max').textContent = siljanRain7vals.length > 0 
             ? fmt(siljanRain7max.val) + ' mm' 
@@ -2754,7 +2806,7 @@
           let siljanRain30max = { val: 0, time: null };
           let siljanRain30total = 0;
           for (const v of siljanRain30vals) {
-            if (v.val >= siljanRain30max.val) siljanRain30max = v;  // >= to capture date even when 0
+            if (v.val > siljanRain30max.val) siljanRain30max = v;  // v1.10.28: same rule as the rain stats card
             siljanRain30total += v.val;
           }
           document.getElementById('siljanRain30max').textContent = siljanRain30vals.length > 0 
@@ -2780,6 +2832,9 @@
           document.getElementById('rainMax30date').textContent = fmtDayMonth(stats30.maxDay.date);
           document.getElementById('rainDays30').textContent = stats30.rainDays;
           document.getElementById('dryStreak').textContent = stats30.maxDryStreak + ' dager';
+          document.getElementById('dryStreakDetail').textContent = stats30.missingDays > 0
+            ? `(siste 30d, ${stats30.missingDays} d uten data)`
+            : '(siste 30d)';
           document.getElementById('rainAvgPerDay').textContent = fmt(stats30.avgPerRainDay) + ' mm';
         }
 
