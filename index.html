@@ -1,4 +1,4 @@
-<!-- Værdata Siljan v1.10.33 -->
+<!-- Værdata Siljan v1.10.34 -->
 <!DOCTYPE html>
 <html lang="nb">
 <head>
@@ -14,12 +14,13 @@
       color: #eee;
       padding: 20px;
       min-height: 100vh;
+      line-height: 1.4;
     }
     h1 { margin-bottom: 2px; font-size: 1.5rem; }
-    .last-updated { color: #aaa; font-size: 0.85rem; }
+    .last-updated { color: #aaa; font-size: 0.875rem; }
     .last-updated.stale { color: #fbbf24; }
     .stale-value { opacity: 0.5; }
-    .updated { text-align: center; color: #a3a3b5; font-size: 0.85rem; margin-bottom: 20px; }
+    .updated { text-align: center; color: #a3a3b5; font-size: 0.875rem; margin-bottom: 20px; }
 
     /* Podcast widget */
     .header-container {
@@ -37,7 +38,7 @@
       gap: 6px 16px;
       max-width: 1200px;
       margin: 0 auto 15px auto;
-      font-size: 0.85rem;
+      font-size: 0.875rem;
     }
     .section-nav a { color: #aaa; text-decoration: none; }
     .podcast-widget {
@@ -49,7 +50,7 @@
       background: #252542;
       border-radius: 25px;
       padding: 8px 15px;
-      font-size: 0.8rem;
+      font-size: 0.875rem;
     }
     .podcast-widget.below-now { max-width: 1200px; margin: 12px auto 0 auto; }
     .podcast-widget img {
@@ -154,7 +155,7 @@
       min-width: 0;
     }
     .card h2, .card h3 {
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       color: #a3a3b5;
       margin-bottom: 10px;
       border-bottom: 1px solid #333;
@@ -169,12 +170,12 @@
     .card.police { border-left: 3px solid #14b8a6; }
     .card.solar, .card.calculator { border-left: 3px solid #84cc16; }
     .card.hero .value { font-size: 3rem; line-height: 1.1; }
-    .card-footer { text-align: center; color: #a3a3b5; font-size: 0.85rem; margin-top: 12px; }
+    .card-footer { text-align: center; color: #a3a3b5; font-size: 0.875rem; margin-top: 12px; }
     .card-footer a { color: #a3a3b5; }
     .wind-now-dir { margin-left: 10px; font-size: 1rem; color: #ccc; white-space: nowrap; }
     .frost-none { color: #4ade80; }
     .frost-note { font-size: 0.75rem; color: #a3a3b5; margin-top: 8px; }
-    .sun-times { font-size: 0.9rem; color: #fbbf24; margin-top: 5px; }
+    .sun-times { font-size: 0.875rem; color: #fbbf24; margin-top: 5px; }
     .aurora-low { color: #4ade80; }
     .aurora-moderate { color: #fbbf24; }
     .aurora-high { color: #f97316; }
@@ -194,14 +195,14 @@
     .card.alert.yellow { border-left-color: #eab308; background: #2a2a1e; }
     .card.alert.orange { border-left-color: #f97316; background: #2a241e; }
     .card.alert.red { border-left-color: #ef4444; background: #2a1e1e; }
-    .value { font-size: 2rem; font-weight: bold; }
-    .unit { font-size: 0.9rem; color: #a3a3b5; margin-left: 0.25em; }
+    .value { font-size: 2rem; font-weight: bold; line-height: 1.1; }
+    .unit { font-size: 0.875rem; color: #a3a3b5; margin-left: 0.25em; }
     .beaufort { font-size: 1rem; color: #4ade80; margin-top: 5px; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
     .stats-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
     .stats-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
     .stat { text-align: center; }
-    .stat-label { font-size: 0.8rem; color: #a3a3b5; }
+    .stat-label { font-size: 0.875rem; color: #a3a3b5; }
     .stat-value { font-size: 1rem; font-weight: bold; }
     .stat-detail { font-size: 0.75rem; color: #a3a3b5; }
     .trend-up { color: #4ade80; }
@@ -241,13 +242,13 @@
       background: #1a1a2e;
       border-radius: 8px;
     }
-    .forecast-day .day-name { font-size: 0.8rem; color: #a3a3b5; margin-bottom: 5px; }
+    .forecast-day .day-name { font-size: 0.875rem; color: #a3a3b5; margin-bottom: 5px; }
     .forecast-day .weather-icon { font-size: 1.5rem; margin: 5px 0; }
-    .forecast-day .temp-range { font-size: 0.8rem; }
-    .forecast-day .precip { font-size: 0.8rem; color: #60a5fa; margin-top: 3px; }
+    .forecast-day .temp-range { font-size: 0.875rem; }
+    .forecast-day .precip { font-size: 0.875rem; color: #60a5fa; margin-top: 3px; }
 
     /* Alert styles */
-    .alert-content { font-size: 0.85rem; line-height: 1.4; }
+    .alert-content { font-size: 0.875rem; line-height: 1.4; }
     .alert-title { font-weight: bold; margin-bottom: 5px; }
     .alert-desc { color: #aaa; }
     .alert-none { color: #4ade80; }
@@ -274,9 +275,9 @@
       border-radius: 8px;
     }
     .water-item .reservoir-name { font-size: 0.75rem; color: #a3a3b5; margin-bottom: 8px; }
-    .water-item .water-level { font-size: 1.1rem; font-weight: bold; }
+    .water-item .water-level { font-size: 1.25rem; font-weight: bold; }
     .water-item .water-ref { font-size: 0.75rem; color: #a3a3b5; margin-top: 4px; }
-    .water-item .fill-pct { font-size: 1.3rem; font-weight: bold; margin-top: 6px; }
+    .water-item .fill-pct { font-size: 1.25rem; font-weight: bold; margin-top: 6px; }
     .water-item .water-trend { font-size: 1rem; margin-left: 5px; }
     .water-trend-up { color: #4ade80; }
     .water-trend-down { color: #60a5fa; }
@@ -310,8 +311,8 @@
       margin-bottom: 10px;
     }
     .police-item:last-child { margin-bottom: 0; }
-    .police-item .police-title { font-size: 0.85rem; font-weight: bold; color: #f59e0b; margin-bottom: 5px; }
-    .police-item .police-desc { font-size: 0.8rem; color: #aaa; line-height: 1.4; }
+    .police-item .police-title { font-size: 0.875rem; font-weight: bold; color: #f59e0b; margin-bottom: 5px; }
+    .police-item .police-desc { font-size: 0.875rem; color: #aaa; line-height: 1.4; }
     .police-item .police-time { font-size: 0.75rem; color: #a3a3b5; margin-top: 5px; }
 
     /* v1.10.32: accessibility */
@@ -354,7 +355,7 @@
         height: 30px;
       }
       /* touch targets (44 px) */
-      .podcast-time-btn { min-height: 44px; min-width: 48px; font-size: 0.8rem; }
+      .podcast-time-btn { min-height: 44px; min-width: 48px; font-size: 0.875rem; }
       .podcast-play-btn { width: 44px; height: 44px; font-size: 16px; }
       .podcast-link { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 44px; }
       .podcast-controls { gap: 2px; }
@@ -410,7 +411,7 @@
       }
       .water-item .water-ref { margin-top: 0; }
       .water-item .fill-bar { margin-top: 4px; }
-      .water-item .reservoir-name { margin: 0; font-size: 0.9rem; }
+      .water-item .reservoir-name { margin: 0; font-size: 0.875rem; }
       .water-item .fill-pct { grid-column: 2; grid-row: 1; margin: 0; }
       .water-item .water-energy { grid-column: 2; grid-row: 2; text-align: right; margin: 0; }
       .water-item .fill-bar { grid-column: 1 / -1; }
@@ -648,6 +649,7 @@
         <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
         <div class="forecast-day"><div class="day-name">--</div><div class="weather-icon">--</div><div class="temp-range">--</div></div>
       </div>
+      <div class="card-footer">Laveste / høyeste temperatur og nedbør per døgn</div>
     </div>
 
     <!-- Skydekke & Tåke -->
@@ -1038,15 +1040,15 @@
     <div class="card water" style="grid-column: 1 / -1;">
       <h3><span aria-hidden="true">🏔️</span> Magasinfylling</h3>
       <div class="water-grid" id="waterGrid">
-        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
-        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
-        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
-        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
-        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--&nbsp;%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--&nbsp;%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--&nbsp;%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--&nbsp;%</div></div>
+        <div class="water-item"><div class="reservoir-name">--</div><div class="fill-pct">--&nbsp;%</div></div>
       </div>
       <div class="card-footer">
         Kilde: <a href="https://www.skagerakkraft.no/vassdrag/vannstand/" target="_blank" rel="noopener">Skagerak Kraft<span class="sr-only"> (åpnes i ny fane)</span></a> og egne beregninger ·
-        Fyllingsgrad: LRV = 0%, HRV = 100% ·
+        Fyllingsgrad: LRV = 0&nbsp;%, HRV = 100&nbsp;% ·
         Oppdatert: <span id="waterUpdate">--</span> · Energi (GWh) er et overslag · Pil: endring siste 3 døgn · Hvit strek: HRV
       </div>
     </div>
@@ -1166,6 +1168,8 @@
     //   v1.10.26 - 24h/7d/30d stats via weather_summary RPC (raw queries were capped at 1000 rows),
     //              7d/30d refreshed every 15 min, Oslo-local day keys, aurora cloud cover race fixed
     //   v1.10.27 - Frost depth card (soil temperature profile from HA via Supabase frost_depth)
+    //   v1.10.34 - Forecast: "Rest i dag" after noon + legend for min/max, space before %,
+    //              font sizes collected in six steps
     //   v1.10.33 - Card content after design review (agent 4): Norwegian number format (comma,
     //              real minus), Oslo time everywhere, "i går" on 24h times, dates with month for
     //              30d, units and Norwegian labels, moonrise/moonset from met.no, reservoir bar
@@ -1715,7 +1719,7 @@
 
       document.getElementById('moonIcon').textContent = moon.icon;
       document.getElementById('moonPhase').textContent = moon.name;
-      document.getElementById('moonIllum').textContent = moon.illumination + '%';
+      document.getElementById('moonIllum').textContent = moon.illumination + '\u00A0%';
 
       // v1.10.33: real moonrise/moonset from met.no (the old formula was "rise + 12 hours")
       updateMoonTimes();
@@ -1850,7 +1854,7 @@
           const darkNow = sunAlt < -6;
           const prob = darkNow ? getAuroraProbability(kp, cloudCover, moonIllum) : 0;
           const probEl = document.getElementById('auroraProb');
-          probEl.textContent = prob + '%';
+          probEl.textContent = prob + '\u00A0%';
           probEl.className = 'stat-value ' + level.class;
 
           // Find max Kp in last 24h (data has 3-hour intervals, so ~8 entries)
@@ -1870,8 +1874,8 @@
           }
 
           // Cloud cover and moon
-          document.getElementById('auroraClouds').textContent = currentCloudCover === null ? '--' : cloudCover + '%';
-          document.getElementById('auroraMoon').textContent = moonIllum + '%';
+          document.getElementById('auroraClouds').textContent = currentCloudCover === null ? '--' : cloudCover + '\u00A0%';
+          document.getElementById('auroraMoon').textContent = moonIllum + '\u00A0%';
 
           // Is it dark enough?
           document.getElementById('auroraDark').textContent = darkNow ? 'Ja' : 'Nei';
@@ -2513,7 +2517,7 @@
             const alertLevel = getWaterAlertLevel(fillPct);
             if (alertLevel) {
               waterAlerts.push({
-                title: `🌊 ${reservoir}: ${fmt(fillPct, 0)}% fyllingsgrad`,
+                title: `🌊 ${reservoir}: ${fmt(fillPct, 0)}\u00A0% fyllingsgrad`,
                 desc: alertLevel.text,
                 severity: alertLevel.level === 'danger' ? 'red' : 'orange',
                 titleClass: alertLevel.class
@@ -2524,7 +2528,7 @@
               <div class="reservoir-name">${reservoir}</div>
               <div class="water-level">${fmt(level, 2)} moh.</div>
               <div class="water-ref">LRV ${fmt(lrv, 1)} · HRV ${fmt(hrv, 1)} moh.</div>
-              <div class="fill-pct ${fillStyle.class}" title="${fillStyle.label}">${fillPct !== null ? fmt(fillPct, 0) : '--'}%<span class="sr-only"> ${fillStyle.label}</span><span class="water-trend ${trend.class}"${trend.label ? ` role="img" aria-label="${trend.label}" title="${trend.label}"` : ''}>${trend.arrow}</span></div>
+              <div class="fill-pct ${fillStyle.class}" title="${fillStyle.label}">${fillPct !== null ? fmt(fillPct, 0) : '--'}&nbsp;%<span class="sr-only"> ${fillStyle.label}</span><span class="water-trend ${trend.class}"${trend.label ? ` role="img" aria-label="${trend.label}" title="${trend.label}"` : ''}>${trend.arrow}</span></div>
               <div class="fill-bar">
                 <div class="fill-bar-inner" style="width: ${barWidth}%; background: ${fillStyle.color};"></div>
                 <div class="fill-bar-hrv" title="HRV (100 %)"></div>
@@ -2685,7 +2689,7 @@
           document.getElementById('solarInverter').textContent = fmt(d.inverter_kw, 2);
           document.getElementById('solarEstimated').textContent = fmt(d.estimated_kw, 2) + ' kW';
           // v1.10.28: the ratio is meaningless when the estimate is ~0 (night)
-          document.getElementById('solarPerformance').textContent = (d.estimated_kw ?? 0) < 0.05 ? '--' : fmt(d.performance_ratio, 0) + '%';
+          document.getElementById('solarPerformance').textContent = (d.estimated_kw ?? 0) < 0.05 ? '--' : fmt(d.performance_ratio, 0) + '\u00A0%';
           document.getElementById('solarIrr').textContent = fmt(d.irradiance, 0) + ' W/m²';
           // stale only counts while the sun is up; the inverter is silent at night
           const solarStale = Date.now() - new Date(d.timestamp).getTime() > 15 * 60000
@@ -2715,7 +2719,7 @@
           const now = forecast.properties.timeseries[0];
           const instant = now.data.instant.details;
 
-          document.getElementById('fog').textContent = fmt(instant.fog_area_fraction, 0) + '%';
+          document.getElementById('fog').textContent = fmt(instant.fog_area_fraction, 0) + '\u00A0%';
 
           const precipNext = now.data.next_1_hours?.details?.precipitation_amount ?? null;
           document.getElementById('precipNextHour').textContent = fmt(precipNext, 1) + ' mm';
@@ -2761,6 +2765,8 @@
           }
 
           const forecastDays = Object.keys(dailyForecasts).sort().slice(0, 7);
+          // v1.10.34: after noon "today" is only the remaining hours, so say that
+          const restOfToday = Number(new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Oslo', hour: '2-digit' })) >= 12;
           const forecastGrid = document.getElementById('forecastGrid');
           forecastGrid.innerHTML = '';
 
@@ -2774,7 +2780,7 @@
             const minCls = getTempClass(minTemp);
             const maxCls = getTempClass(maxTemp);
             dayEl.innerHTML = `
-              <div class="day-name">${fmtDayName(day.time)}</div>
+              <div class="day-name"${restOfToday && fmtDayName(day.time) === 'I dag' ? ' title="Bare timene som er igjen av dagen"' : ''}>${restOfToday && fmtDayName(day.time) === 'I dag' ? 'Rest i dag' : fmtDayName(day.time)}</div>
               <div class="weather-icon" role="img" aria-label="${getWeatherText(day.symbol)}" title="${getWeatherText(day.symbol)}">${getWeatherIcon(day.symbol)}</div>
               <div class="temp-range">
                 <span class="${minCls}">${fmt(minTemp, 0)}°</span> /
@@ -2858,8 +2864,8 @@
           document.getElementById('windDirDeg').textContent = (d.wind_direction !== null && d.wind_direction !== undefined) ? d.wind_direction + '°' : '--';
           document.getElementById('clouds').textContent = fmt(d.cloud_cover, 0);
           if (d.cloud_cover !== null && d.cloud_cover !== undefined) currentCloudCover = d.cloud_cover;
-          document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '%';
-          document.getElementById('thunderProb').textContent = fmt(d.thunder_probability, 0) + '%';
+          document.getElementById('precipProb').textContent = fmt(d.precipitation_probability, 0) + '\u00A0%';
+          document.getElementById('thunderProb').textContent = fmt(d.thunder_probability, 0) + '\u00A0%';
 
           document.getElementById('siljanTempMin').innerHTML = fmtTempColored(d.temp_min_daily);
           document.getElementById('siljanTempMax').innerHTML = fmtTempColored(d.temp_max_daily);
@@ -2911,13 +2917,13 @@
           document.getElementById('gust24time').textContent = fmtTimeRel(gust24.max.time);
 
           const clouds24 = sumField(s24, 'cloud_cover');
-          document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '%';
+          document.getElementById('clouds24min').textContent = fmt(clouds24.min.val, 0) + '\u00A0%';
           document.getElementById('clouds24minTime').textContent = fmtTimeRel(clouds24.min.time);
-          document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '%';
+          document.getElementById('clouds24max').textContent = fmt(clouds24.max.val, 0) + '\u00A0%';
           document.getElementById('clouds24maxTime').textContent = fmtTimeRel(clouds24.max.time);
 
           const thunder24 = sumField(s24, 'thunder_probability');
-          document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '%';
+          document.getElementById('thunderProb24max').textContent = fmt(thunder24.max.val, 0) + '\u00A0%';
           document.getElementById('thunderProb24time').textContent = fmtTimeRel(thunder24.max.time);
 
           const irr24 = sumField(s24, 'irradiance');
@@ -2986,7 +2992,7 @@
             ? fmtDayMonth(siljanRain7max.time)
             : (siljanRain7vals.length > 0 ? 'ingen nedbør' : '--');
 
-          document.getElementById('hum7avg').textContent = fmt(sumField(s7, 'humidity').avg, 0) + '%';
+          document.getElementById('hum7avg').textContent = fmt(sumField(s7, 'humidity').avg, 0) + '\u00A0%';
           document.getElementById('press7avg').textContent = fmt(sumField(s7, 'pressure').avg, 0) + ' hPa';
 
           const wind7 = sumField(s7, 'wind_speed');
